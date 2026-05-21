@@ -1,0 +1,91 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
+[ext_resource type="Script" path="res://scripts/ui/debug_hud.gd" id="2_hud_script"]
+
+[sub_resource type="RectangleShape2D" id="floor_shape"]
+size = Vector2(2400, 64)
+
+[sub_resource type="RectangleShape2D" id="platform_shape"]
+size = Vector2(240, 32)
+
+[node name="TestStage" type="Node2D"]
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(0, 400)
+
+[node name="FloorVisual" type="Polygon2D" parent="Floor"]
+polygon = PackedVector2Array(-1200, -32, 1200, -32, 1200, 32, -1200, 32)
+color = Color(0.28, 0.24, 0.18, 1)
+
+[node name="FloorCollision" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("floor_shape")
+
+[node name="PlatformA" type="StaticBody2D" parent="."]
+position = Vector2(-400, 284)
+
+[node name="VisualA" type="Polygon2D" parent="PlatformA"]
+polygon = PackedVector2Array(-120, -16, 120, -16, 120, 16, -120, 16)
+color = Color(0.35, 0.3, 0.22, 1)
+
+[node name="CollisionA" type="CollisionShape2D" parent="PlatformA"]
+shape = SubResource("platform_shape")
+
+[node name="PlatformB" type="StaticBody2D" parent="."]
+position = Vector2(40, 184)
+
+[node name="VisualB" type="Polygon2D" parent="PlatformB"]
+polygon = PackedVector2Array(-120, -16, 120, -16, 120, 16, -120, 16)
+color = Color(0.35, 0.3, 0.22, 1)
+
+[node name="CollisionB" type="CollisionShape2D" parent="PlatformB"]
+shape = SubResource("platform_shape")
+
+[node name="PlatformC" type="StaticBody2D" parent="."]
+position = Vector2(520, 104)
+
+[node name="VisualC" type="Polygon2D" parent="PlatformC"]
+polygon = PackedVector2Array(-120, -16, 120, -16, 120, 16, -120, 16)
+color = Color(0.35, 0.3, 0.22, 1)
+
+[node name="CollisionC" type="CollisionShape2D" parent="PlatformC"]
+shape = SubResource("platform_shape")
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(0, 200)
+
+[node name="DebugHUD" type="CanvasLayer" parent="."]
+script = ExtResource("2_hud_script")
+
+[node name="Root" type="Control" parent="DebugHUD"]
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 320.0
+offset_bottom = 100.0
+mouse_filter = 2
+
+[node name="Background" type="ColorRect" parent="DebugHUD/Root"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.04, 0.04, 0.08, 0.72)
+mouse_filter = 2
+
+[node name="VBox" type="VBoxContainer" parent="DebugHUD/Root"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = 10.0
+offset_right = -14.0
+offset_bottom = -10.0
+theme_override_constants/separation = 6
+mouse_filter = 2
+
+[node name="StateLabel" type="Label" parent="DebugHUD/Root/VBox"]
+text = "Estado: --"
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(1, 0.95, 0.7, 1)
+
+[node name="ChakraLabel" type="Label" parent="DebugHUD/Root/VBox"]
+text = "Chakra: --"
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.55, 0.85, 1, 1)
