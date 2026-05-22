@@ -138,7 +138,7 @@ Com max 100, a barra cheia comporta **1 Rasengan + 0.75 shuriken**, OU **2 shuri
 
 ## ⚔️ Dinâmica de Combate em Ação (Exemplo Prático)
 
-![Execução e Queda na Kill Zone](documentation/01_combate_queda.png)
+![Execução e Queda na Kill Zone](documentation/Precip%C3%ADcio_Hud.png)
 *Legenda: O MeleeNinja aplicando um golpe na beira do precipício, ativando o hitstun do Player e resultando em queda livre em direção à kill zone.*
 
 Este frame congela o instante em que **todos os subsistemas cooperam sem nenhum scripting específico** pra produzir uma situação emergente. O MeleeNinja perseguiu o Player até a borda do mapa em CHASE, entrou na fase `active` do ATTACK, e a hitbox conectou. O `_take_damage()` no `PlayerController` então executou a única linha que define o resultado dramático:
