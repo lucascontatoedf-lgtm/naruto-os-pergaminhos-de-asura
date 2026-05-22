@@ -68,6 +68,13 @@ chakra_charge={
 ]
 }
 
+[layer_names]
+
+2d_physics/layer_2="player_hitbox"
+2d_physics/layer_3="enemy_hurtbox"
+2d_physics/layer_5="enemy_hitbox"
+2d_physics/layer_6="player_hurtbox"
+
 [physics]
 
 3d/physics_engine="Jolt Physics"

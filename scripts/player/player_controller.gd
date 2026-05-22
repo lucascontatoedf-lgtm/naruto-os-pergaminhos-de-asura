@@ -8,6 +8,7 @@ extends CharacterBody2D
 # CONSTANTES DE FÍSICA
 # ---------------------------------------------------------------------------
 const MAX_FALL_SPEED: float = 900.0
+const SHURIKEN_SCENE: PackedScene = preload("res://scenes/entities/shuriken.tscn")
 
 # ---------------------------------------------------------------------------
 # PARÂMETROS DE MOVIMENTO (ajustáveis no editor)
@@ -29,14 +30,25 @@ const MAX_FALL_SPEED: float = 900.0
 
 @export_group("Chakra")
 @export var max_chakra: float = 100.0
-@export var chakra_regen_rate: float = 6.0          ## Regen passiva por segundo.
+@export var chakra_regen_rate: float = 8.0          ## Regen passiva por segundo (bumpado pra acompanhar a economia 40/70 dos golpes).
 @export var chakra_charge_rate: float = 35.0        ## Regen ativa ao segurar `chakra_charge`.
-@export var rasengan_chakra_cost: float = 40.0
+@export var rasengan_chakra_cost: float = 70.0      ## Custo do Rasengan (L). Balanceado contra regen 8/s + chakra_charge ativo.
+@export var shuriken_chakra_cost: float = 40.0      ## Custo por arremesso (J). Economia tight — força escolha entre stockar pra Rasengan ou gastar em shurikens.
 
 @export_group("Combate")
 @export var light_attack_duration: float = 0.30
 @export var heavy_attack_duration: float = 0.50
 @export var special_duration: float = 0.65
+@export var rasengan_dash_speed: float = 1300.0      ## Impulso inicial de velocity.x no Rasengan; decai pela friction natural do chão. Calibrado pro ritmo dinâmico atual.
+@export var attack_cancel_window_ratio: float = 0.25 ## Fração FINAL da duração em que a trava de movimento abre e o player aceita input de novo.
+@export var combo_dash_speed: float = 250.0          ## Micro-impulso de velocity.x a cada hit conectado no combo. Decai pela friction em poucos frames — dá um "tranco" sutil de ganho de terreno.
+
+@export_group("Vida")
+@export var max_health: int = 5                        ## Vida total. Quando current_health chega a 0 → DEATH → respawn.
+@export var hurt_stun_duration: float = 0.4            ## Tempo travado em HURT (frames de hitstun) antes de retomar IDLE/FALL.
+@export var hurt_knockback_speed: float = 350.0        ## Velocidade horizontal do tranco ao tomar dano.
+@export var invulnerability_duration: float = 0.8      ## I-frames pós-HURT — hits adicionais são ignorados durante esse tempo.
+@export var death_respawn_delay: float = 1.5           ## Tempo travado em DEATH antes do respawn automático.
 
 @export_group("Respawn")
 @export var kill_zone_y: float = 1000.0    ## Limite vertical inferior. Se position.y passar disso, o player respawna em _spawn_position.
@@ -53,6 +65,8 @@ enum State {
 	ATTACK,
 	SPECIAL,
 	CHAKRA_CHARGE,
+	HURT,
+	DEATH,
 }
 
 # ---------------------------------------------------------------------------
@@ -68,18 +82,23 @@ signal special_started
 signal special_ended
 signal facing_flipped(direction: int) ## 1 = direita, -1 = esquerda
 signal respawned(at_position: Vector2) ## Disparado quando o player cruza a kill zone e é reposicionado.
+signal health_changed(current: int, maximum: int)        ## Para HUD de vida — emitido sempre que current_health muda.
+signal player_hurt(damage: int, source_position: Vector2) ## Emitido ao entrar em HURT (não em DEATH).
+signal player_died                                        ## Emitido ao entrar em DEATH (vida chegou a 0).
 
 # ---------------------------------------------------------------------------
 # ESTADO INTERNO
 # ---------------------------------------------------------------------------
 var current_state: State = State.IDLE
 var current_chakra: float = 0.0
+var current_health: int = 0
 var facing_direction: int = 1
 
 # Timers (em segundos, contagem regressiva)
 var _coyote_timer: float = 0.0
 var _jump_buffer_timer: float = 0.0
 var _state_timer: float = 0.0
+var _invulnerability_timer: float = 0.0     ## I-frames pós-HURT: enquanto > 0, hits são ignorados em _on_hit_taken.
 
 # Contador de pulos desde o último contato com o chão (reseta em is_on_floor()).
 var _jumps_made: int = 0
@@ -90,22 +109,32 @@ var _current_attack_kind: String = ""
 # Posição capturada em _ready; alvo do respawn quando o player cruza a kill zone.
 var _spawn_position: Vector2 = Vector2.ZERO
 
+# Mapeia "light" / "heavy" / "special" → instância de Hitbox correspondente. Populado em _ready.
+var _hitbox_by_kind: Dictionary = {}
+
 # ---------------------------------------------------------------------------
-# NÓS (placeholders — serão ligados quando a cena Player.tscn for criada)
+# NÓS — referências da cena Player.tscn
 # ---------------------------------------------------------------------------
+@onready var hitbox_light: Hitbox = $HitboxLight
+@onready var hitbox_special: Hitbox = $HitboxSpecial
+@onready var hurtbox: Hurtbox = $Hurtbox
 # @onready var animation_player: AnimationPlayer = $AnimationPlayer
-# @onready var sprite: Sprite2D = $Sprite2D
-# @onready var hitbox_light: Area2D = $Hitboxes/Light
-# @onready var hitbox_heavy: Area2D = $Hitboxes/Heavy
-# @onready var hitbox_special: Area2D = $Hitboxes/Special
+# Heavy não tem mais Area2D no Player — virou projétil (Shuriken) instanciado em _throw_shuriken().
 
 # ===========================================================================
 # CICLO DE VIDA
 # ===========================================================================
 func _ready() -> void:
 	current_chakra = max_chakra
+	current_health = max_health
 	chakra_changed.emit(current_chakra, max_chakra)
+	health_changed.emit(current_health, max_health)
 	_spawn_position = position
+	_hitbox_by_kind = {
+		"light": hitbox_light,
+		"special": hitbox_special,
+	} # "heavy" não entra: vira projétil via _throw_shuriken()
+	hurtbox.hit_taken.connect(_on_hit_taken)
 	_enter_state(State.IDLE)
 
 func _physics_process(delta: float) -> void:
@@ -139,6 +168,7 @@ func _tick_timers(delta: float) -> void:
 
 	_jump_buffer_timer = maxf(_jump_buffer_timer - delta, 0.0)
 	_state_timer = maxf(_state_timer - delta, 0.0)
+	_invulnerability_timer = maxf(_invulnerability_timer - delta, 0.0)
 
 func _buffer_jump_input() -> void:
 	if Input.is_action_just_pressed("jump"):
@@ -229,8 +259,11 @@ func _respawn() -> void:
 	_coyote_timer = 0.0
 	_jump_buffer_timer = 0.0
 	_state_timer = 0.0
+	_invulnerability_timer = 0.0
 	current_chakra = max_chakra
+	current_health = max_health
 	chakra_changed.emit(current_chakra, max_chakra)
+	health_changed.emit(current_health, max_health)
 	_change_state(State.IDLE)
 	respawned.emit(_spawn_position)
 
@@ -247,6 +280,8 @@ func _process_current_state(delta: float) -> void:
 		State.ATTACK:        _state_attack(delta)
 		State.SPECIAL:       _state_special(delta)
 		State.CHAKRA_CHARGE: _state_chakra_charge(delta)
+		State.HURT:          _state_hurt(delta)
+		State.DEATH:         _state_death(delta)
 
 func _change_state(new_state: State) -> void:
 	if new_state == current_state:
@@ -279,12 +314,28 @@ func _enter_state(state: State) -> void:
 		State.SPECIAL:
 			_state_timer = special_duration
 			_spend_chakra(rasengan_chakra_cost)
+			velocity.x = rasengan_dash_speed * facing_direction # dash curto pra frente; friction decai naturalmente
 			special_started.emit()
 			_enable_attack_hitbox("special")
 			_play_animation("rasengan")
 		State.CHAKRA_CHARGE:
 			velocity.x = 0.0
 			_play_animation("chakra_charge")
+		State.HURT:
+			_state_timer = hurt_stun_duration
+			_invulnerability_timer = invulnerability_duration
+			# Desliga qualquer hitbox que estivesse ativa (em caso de hit mid-attack).
+			_disable_attack_hitbox("light")
+			_disable_attack_hitbox("special")
+			_play_animation("hurt")
+			# velocity.x foi setado por _take_damage ANTES desta transição (knockback).
+		State.DEATH:
+			velocity = Vector2.ZERO
+			_state_timer = death_respawn_delay
+			_disable_attack_hitbox("light")
+			_disable_attack_hitbox("special")
+			player_died.emit()
+			_play_animation("death")
 
 func _exit_state(state: State) -> void:
 	match state:
@@ -377,13 +428,20 @@ func _state_crouch(delta: float) -> void:
 		return
 
 func _state_attack(delta: float) -> void:
-	_apply_horizontal_movement(delta, 0.0) # ataque "trava" o personagem; será revisitado em combate aéreo.
+	var duration: float = light_attack_duration if _current_attack_kind == "light" else heavy_attack_duration
+	_tick_attack_lock(delta, duration)
+
+	# Combo cancel: dentro da janela final, apertar attack_light/heavy emenda no próximo golpe.
+	var lock_threshold: float = duration * attack_cancel_window_ratio
+	if _state_timer <= lock_threshold and _try_chain_attack():
+		return
 
 	if _state_timer <= 0.0:
 		_change_state(State.FALL if not is_on_floor() else State.IDLE)
 
 func _state_special(delta: float) -> void:
-	_apply_horizontal_movement(delta, 0.0)
+	# Dash inicial setado em _enter_state(SPECIAL); aqui o impulso decai via friction enquanto travado.
+	_tick_attack_lock(delta, special_duration)
 
 	if _state_timer <= 0.0:
 		_change_state(State.FALL if not is_on_floor() else State.IDLE)
@@ -403,6 +461,21 @@ func _state_chakra_charge(delta: float) -> void:
 	if not is_on_floor():
 		_change_state(State.FALL); return
 
+func _state_hurt(delta: float) -> void:
+	# Hitstun: nenhum input é lido, friction decai o knockback aplicado em _take_damage.
+	_apply_horizontal_movement(delta, 0.0)
+
+	if _state_timer <= 0.0:
+		# Saída pra IDLE/FALL conforme estado físico. I-frames seguem ativos até _invulnerability_timer expirar.
+		_change_state(State.FALL if not is_on_floor() else State.IDLE)
+
+func _state_death(delta: float) -> void:
+	# Trava total: zero input, velocidade decai naturalmente. Respawn automático ao fim do timer.
+	_apply_horizontal_movement(delta, 0.0)
+
+	if _state_timer <= 0.0:
+		_respawn() # _respawn já transiciona pra IDLE e reseta vida/chakra/timers
+
 # ===========================================================================
 # HELPERS DE TRANSIÇÃO (reduzem duplicação entre IDLE/MOVE/CROUCH)
 # ===========================================================================
@@ -411,7 +484,7 @@ func _try_start_attack() -> bool:
 		_current_attack_kind = "light"
 		_change_state(State.ATTACK)
 		return true
-	if Input.is_action_just_pressed("attack_heavy"):
+	if Input.is_action_just_pressed("attack_heavy") and current_chakra >= shuriken_chakra_cost:
 		_current_attack_kind = "heavy"
 		_change_state(State.ATTACK)
 		return true
@@ -429,6 +502,26 @@ func _try_start_chakra_charge() -> bool:
 		return true
 	return false
 
+func _try_chain_attack() -> bool:
+	## Combo: chamado dentro do cancel_window do _state_attack.
+	## Apertar attack_light ou attack_heavy reentra ATTACK com novo kind sem passar
+	## por _change_state (que bloqueia transição mesmo→mesmo).
+	## Faz exit + enter manualmente pra reciclar hitbox, signals attack_started/ended e _state_timer.
+	var new_kind: String = ""
+	if Input.is_action_just_pressed("attack_light"):
+		new_kind = "light"
+	elif Input.is_action_just_pressed("attack_heavy") and current_chakra >= shuriken_chakra_cost:
+		new_kind = "heavy"
+	else:
+		return false
+
+	_exit_state(State.ATTACK)   # desliga hitbox atual + emite attack_ended (+ zera _current_attack_kind)
+	_current_attack_kind = new_kind
+	_enter_state(State.ATTACK)  # liga novo hitbox + emite attack_started + reseta _state_timer
+	# Micro-dash: cada hit conectado ganha um "tranco" sutil pra frente; friction decai em ~5 frames.
+	velocity.x = combo_dash_speed * facing_direction
+	return true
+
 # ===========================================================================
 # GANCHOS — ANIMAÇÃO (preencher quando AnimationPlayer existir)
 # ===========================================================================
@@ -441,11 +534,69 @@ func _play_animation(_anim_name: String) -> void:
 # ===========================================================================
 # GANCHOS — HITBOXES DE ATAQUE (preencher quando Player.tscn tiver Area2Ds)
 # ===========================================================================
-func _enable_attack_hitbox(_kind: String) -> void:
-	# TODO Semana 2: ativar Area2D correspondente (light / heavy / special),
-	# orientando-o conforme `facing_direction`.
-	pass
+func _enable_attack_hitbox(kind: String) -> void:
+	if kind == "heavy":
+		_throw_shuriken()
+		return
+	var hitbox: Hitbox = _hitbox_by_kind.get(kind) as Hitbox
+	if hitbox == null:
+		return
+	# Espelha a posição X conforme a direção atual do personagem.
+	hitbox.position.x = absf(hitbox.position.x) * facing_direction
+	hitbox.enable()
 
-func _disable_attack_hitbox(_kind: String) -> void:
-	# TODO Semana 2: desativar Area2D correspondente.
-	pass
+func _disable_attack_hitbox(kind: String) -> void:
+	if kind == "heavy":
+		return # shuriken se autodestrói (max_travel_distance ou hit) — nada pra desligar aqui
+	var hitbox: Hitbox = _hitbox_by_kind.get(kind) as Hitbox
+	if hitbox == null:
+		return
+	hitbox.disable()
+
+# ===========================================================================
+# COMBATE — HELPERS E PROJÉTEIS
+# ===========================================================================
+func _tick_attack_lock(delta: float, duration: float) -> void:
+	## Trava velocity.x durante a fração inicial do ataque; libera input de movimento no final
+	## (último `attack_cancel_window_ratio` da duração) pra permitir cancel leve.
+	var lock_threshold: float = duration * attack_cancel_window_ratio
+	if _state_timer > lock_threshold:
+		_apply_horizontal_movement(delta, 0.0)
+	else:
+		_apply_horizontal_movement(delta, _get_move_input())
+
+func _throw_shuriken() -> void:
+	_spend_chakra(shuriken_chakra_cost)
+	var shuriken: Shuriken = SHURIKEN_SCENE.instantiate() as Shuriken
+	shuriken.direction = Vector2(facing_direction, 0)
+	shuriken.global_position = global_position + Vector2(30 * facing_direction, -48)
+	get_parent().add_child(shuriken)
+
+# ===========================================================================
+# SISTEMA DE DANO — Hurtbox → HURT / DEATH
+# ===========================================================================
+func _on_hit_taken(incoming_hitbox: Hitbox) -> void:
+	## Entry point: chamado quando uma Hitbox inimiga colide com a Hurtbox do Player.
+	## Filtra DEATH e i-frames antes de delegar pra _take_damage.
+	if current_state == State.DEATH:
+		return
+	if _invulnerability_timer > 0.0:
+		return # i-frames pós-HURT — ignora hits em cascata
+	_take_damage(incoming_hitbox.damage, incoming_hitbox.global_position)
+
+func _take_damage(amount: int, source_position: Vector2) -> void:
+	current_health = maxi(current_health - amount, 0)
+	health_changed.emit(current_health, max_health)
+
+	if current_health <= 0:
+		_change_state(State.DEATH)
+		return
+
+	# Knockback horizontal pra longe do atacante: signf(player.x - source.x).
+	var knockback_dir: float = signf(global_position.x - source_position.x)
+	if knockback_dir == 0.0:
+		knockback_dir = -float(facing_direction) # fallback raro: empurra pra trás do facing atual
+	velocity.x = hurt_knockback_speed * knockback_dir
+
+	player_hurt.emit(amount, source_position)
+	_change_state(State.HURT)

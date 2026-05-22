@@ -1,3 +1,32 @@
-# Godot 4+ specific ignores
+# =============================================================================
+# Godot Engine 4.x — artefatos locais que NÃO devem subir pro repositório
+# =============================================================================
+
+# Cache de import + dados gerados automaticamente pelo editor (4.x)
 .godot/
+
+# Pasta de import legado (Godot 3.x) — incluída por segurança caso alguém
+# abra o projeto numa versão antiga
+.import/
+
+# Builds e configs de export específicos do ambiente local
 /android/
+export.cfg
+export_presets.cfg
+
+# Arquivos de tradução compilados — gerados a partir dos .po/.csv
+*.translation
+
+# =============================================================================
+# Sistema operacional
+# =============================================================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =============================================================================
+# Editores comuns
+# =============================================================================
+.vscode/
+.idea/
+*.swp

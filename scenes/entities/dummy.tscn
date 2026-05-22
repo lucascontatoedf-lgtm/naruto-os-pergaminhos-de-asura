@@ -1,0 +1,42 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/entities/dummy.gd" id="1_dummy"]
+[ext_resource type="Script" path="res://scripts/components/hurtbox.gd" id="2_hurtbox"]
+
+[sub_resource type="RectangleShape2D" id="body_shape"]
+size = Vector2(48, 96)
+
+[sub_resource type="RectangleShape2D" id="hurtbox_shape"]
+size = Vector2(52, 100)
+
+[node name="Dummy" type="StaticBody2D"]
+script = ExtResource("1_dummy")
+
+[node name="Visual" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-24, -96, 24, -96, 24, 0, -24, 0)
+color = Color(0.45, 0.45, 0.5, 1)
+
+[node name="BodyShape" type="CollisionShape2D" parent="."]
+position = Vector2(0, -48)
+shape = SubResource("body_shape")
+
+[node name="Hurtbox" type="Area2D" parent="."]
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("2_hurtbox")
+
+[node name="HurtboxShape" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -48)
+shape = SubResource("hurtbox_shape")
+
+[node name="HPBar" type="Node2D" parent="."]
+position = Vector2(0, -116)
+
+[node name="Background" type="Polygon2D" parent="HPBar"]
+polygon = PackedVector2Array(-30, -4, 30, -4, 30, 4, -30, 4)
+color = Color(0.15, 0.15, 0.15, 0.85)
+
+[node name="Fill" type="Polygon2D" parent="HPBar"]
+position = Vector2(-30, 0)
+polygon = PackedVector2Array(0, -4, 60, -4, 60, 4, 0, 4)
+color = Color(0.3, 0.85, 0.3, 1)

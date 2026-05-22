@@ -1,7 +1,9 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="Script" path="res://scripts/ui/debug_hud.gd" id="2_hud_script"]
+[ext_resource type="PackedScene" path="res://scenes/entities/dummy.tscn" id="3_dummy"]
+[ext_resource type="PackedScene" path="res://scenes/entities/melee_ninja.tscn" id="4_melee_ninja"]
 
 [sub_resource type="RectangleShape2D" id="floor_shape"]
 size = Vector2(2400, 64)
@@ -51,6 +53,12 @@ color = Color(0.35, 0.3, 0.22, 1)
 [node name="CollisionC" type="CollisionShape2D" parent="PlatformC"]
 shape = SubResource("platform_shape")
 
+[node name="Dummy" parent="." instance=ExtResource("3_dummy")]
+position = Vector2(280, 368)
+
+[node name="MeleeNinja" parent="." instance=ExtResource("4_melee_ninja")]
+position = Vector2(-150, 368)
+
 [node name="Player" parent="." instance=ExtResource("1_player")]
 position = Vector2(0, 200)
 
@@ -61,7 +69,7 @@ script = ExtResource("2_hud_script")
 offset_left = 12.0
 offset_top = 12.0
 offset_right = 320.0
-offset_bottom = 100.0
+offset_bottom = 122.0
 mouse_filter = 2
 
 [node name="Background" type="ColorRect" parent="DebugHUD/Root"]
@@ -84,6 +92,11 @@ mouse_filter = 2
 text = "Estado: --"
 theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(1, 0.95, 0.7, 1)
+
+[node name="HealthLabel" type="Label" parent="DebugHUD/Root/VBox"]
+text = "Vida: --"
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
 
 [node name="ChakraLabel" type="Label" parent="DebugHUD/Root/VBox"]
 text = "Chakra: --"

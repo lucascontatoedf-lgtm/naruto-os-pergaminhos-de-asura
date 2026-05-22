@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($root = \"C:\\\\Projetos\\\\Naruto Game\\\\naruto-os-pergaminhos-de-asura\"; Write-Output \"=== Files ===\"; Get-ChildItem \"$root\\\\project.godot\",\"$root\\\\scripts\\\\player\\\\player_controller.gd\" -ErrorAction SilentlyContinue | ForEach-Object { \"{0}  \\({1} bytes\\)\" -f $_.FullName, $_.Length }; Write-Output \"\"; Write-Output \"=== Inputs em project.godot ===\"; Select-String -Path \"$root\\\\project.godot\" -Pattern \"^\\(attack_light|attack_heavy|special|chakra_charge\\)=\" | ForEach-Object { \"L{0}: {1}\" -f $_.LineNumber, $_.Line }; Write-Output \"\"; Write-Output \"=== Estados de combate em player_controller.gd ===\"; Select-String -Path \"$root\\\\scripts\\\\player\\\\player_controller.gd\" -Pattern \"\\(State\\\\.\\(ATTACK|SPECIAL|CHAKRA_CHARGE\\)|func _state_\\(attack|special|chakra_charge\\)|func _try_start_\\(attack|special|chakra_charge\\)|func _enable_attack_hitbox|func _disable_attack_hitbox\\)\" | Select-Object -First 25 | ForEach-Object { \"L{0}: {1}\" -f $_.LineNumber, $_.Line.Trim\\(\\) })",
+      "PowerShell($sub = \"C:\\\\Projetos\\\\Naruto Game\\\\naruto-os-pergaminhos-de-asura\"; if \\(Test-Path $sub\\) { $contents = Get-ChildItem $sub -Force -ErrorAction SilentlyContinue; if \\($contents.Count -eq 0\\) { Remove-Item $sub -Force; Write-Output \"DELETADA \\(estava vazia\\)\" } else { Write-Output \"NAO DELETEI - tem conteudo:\"; $contents | Format-List Name } } else { Write-Output \"JA NAO EXISTE\" })"
+    ]
+  }
+}
