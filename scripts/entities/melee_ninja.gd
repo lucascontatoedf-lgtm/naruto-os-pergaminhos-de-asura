@@ -26,6 +26,7 @@ const MAX_FALL_SPEED: float = 900.0
 @export var chase_speed: float = 160.0
 @export var ground_friction: float = 2000.0
 @export var enemy_jump_velocity: float = -650.0   ## Impulso Y inicial do pulo em CHASE. Negativo = pra cima. Calibrado pra GRAVITY=1400 (pico ~151px).
+@export var recoil_speed: float = 120.0           ## Velocidade horizontal do recuo quando o player gruda no ponto cego (< 8px). Cria espaço pra atacar de novo.
 
 @export_group("Patrol")
 @export var patrol_distance: float = 220.0          ## Distância máxima do spawn antes de virar.
@@ -49,6 +50,7 @@ const MAX_FALL_SPEED: float = 900.0
 
 @export_group("Respawn")
 @export var respawn_delay: float = 2.0
+@export var kill_zone_y: float = 1000.0           ## Limite vertical inferior. Se y ultrapassar → _die() → respawn em _spawn_position após respawn_delay. Mesmo flow da morte por HP.
 
 # ---------------------------------------------------------------------------
 # MÁQUINA DE ESTADOS
@@ -123,6 +125,8 @@ func _physics_process(delta: float) -> void:
 	_update_visual_facing()
 
 	move_and_slide()
+
+	_check_kill_zone()
 
 # ===========================================================================
 # FÍSICA & TIMERS
@@ -257,6 +261,12 @@ func _state_chase(_delta: float) -> void:
 	if abs_horizontal > 1.0:
 		facing_direction = 1 if horizontal_distance > 0.0 else -1
 
+	# Ponto cego: player gruda em cima do ninja (< 8px). A Hitbox melee fica em +40 de offset,
+	# então um ATTACK aqui whiff. Recua pra criar espaço e re-engajar no próximo frame.
+	if abs_horizontal < 8.0:
+		velocity.x = -recoil_speed * facing_direction
+		return
+
 	# Em alcance e fora de cooldown → ATTACK.
 	if abs_horizontal < attack_range and _attack_cooldown_timer <= 0.0:
 		_change_state(State.ATTACK)
@@ -365,6 +375,14 @@ func _resolve_attack_direction(hb: Hitbox) -> float:
 		# Fallback defensivo se a hitbox estiver exatamente em cima do parent.
 		return 1.0 if global_position.x >= hb.global_position.x else -1.0
 	return local_sign
+
+func _check_kill_zone() -> void:
+	## Knockback do Rasengan ou queda de plataforma pode empurrar o ninja pra fora do mapa.
+	## Sem esta checagem, o engine segue simulando gravidade infinitamente e o ninja
+	## "assombra o limbo" — vivo no Y=10000+, ainda gastando frames de física.
+	## Reusa o flow de morte por HP: _die() → DEAD → invisível por respawn_delay → renasce no _spawn_position com HP cheio.
+	if position.y > kill_zone_y:
+		_die()
 
 func _die() -> void:
 	_change_state(State.DEAD)

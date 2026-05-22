@@ -253,19 +253,14 @@ func _check_kill_zone() -> void:
 		_respawn()
 
 func _respawn() -> void:
-	position = _spawn_position
-	velocity = Vector2.ZERO
-	_jumps_made = 0
-	_coyote_timer = 0.0
-	_jump_buffer_timer = 0.0
-	_state_timer = 0.0
-	_invulnerability_timer = 0.0
-	current_chakra = max_chakra
-	current_health = max_health
-	chakra_changed.emit(current_chakra, max_chakra)
-	health_changed.emit(current_health, max_health)
-	_change_state(State.IDLE)
-	respawned.emit(_spawn_position)
+	## Reload completo da cena: substitui o reset local de posição/HP/chakra/timers.
+	## Disparado tanto pela kill zone (y > kill_zone_y em _check_kill_zone) quanto pelo
+	## fim do timer de State.DEATH em _state_death. Garante que TODOS os nós da fase
+	## (MeleeNinja, Dummy, plataformas, futuros inimigos) ressurjam limpos, e que os
+	## signals do DebugHUD reconectem do zero no _ready() do novo Player — sem acúmulo
+	## de estado entre vidas. O engine processa o reload no fim do frame atual,
+	## então qualquer linha após esta no callstack ainda roda em segurança.
+	get_tree().reload_current_scene()
 
 # ===========================================================================
 # MÁQUINA DE ESTADOS — DISPATCH
