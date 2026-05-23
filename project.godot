@@ -74,6 +74,8 @@ chakra_charge={
 2d_physics/layer_3="enemy_hurtbox"
 2d_physics/layer_5="enemy_hitbox"
 2d_physics/layer_6="player_hurtbox"
+2d_physics/layer_7="enemy_body"
+2d_physics/layer_8="player_body"
 
 [physics]
 

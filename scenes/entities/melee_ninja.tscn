@@ -17,7 +17,7 @@ size = Vector2(60, 70)
 radius = 280.0
 
 [node name="MeleeNinja" type="CharacterBody2D"]
-collision_layer = 1
+collision_layer = 64
 collision_mask = 1
 script = ExtResource("1_melee")
 
@@ -58,7 +58,7 @@ shape = SubResource("hitbox_shape")
 
 [node name="DetectionArea" type="Area2D" parent="."]
 collision_layer = 0
-collision_mask = 1
+collision_mask = 128
 
 [node name="DetectionShape" type="CollisionShape2D" parent="DetectionArea"]
 shape = SubResource("detection_shape")

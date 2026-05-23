@@ -27,6 +27,7 @@ const MAX_FALL_SPEED: float = 900.0
 @export var ground_friction: float = 2000.0
 @export var enemy_jump_velocity: float = -650.0   ## Impulso Y inicial do pulo em CHASE. Negativo = pra cima. Calibrado pra GRAVITY=1400 (pico ~151px).
 @export var recoil_speed: float = 120.0           ## Velocidade horizontal do recuo quando o player gruda no ponto cego (< 8px). Cria espaço pra atacar de novo.
+@export var chase_jump_y_threshold: float = 40.0  ## Player precisa estar ≥ esse valor acima do inimigo em Y pra disparar o pulo no CHASE. Menor = pula em diferenças menores.
 
 @export_group("Patrol")
 @export var patrol_distance: float = 220.0          ## Distância máxima do spawn antes de virar.
@@ -45,8 +46,14 @@ const MAX_FALL_SPEED: float = 900.0
 
 @export_group("Hit Feel")
 @export var hit_flash_duration: float = 0.12        ## Duração do flash vermelho.
-@export var hit_knockback_speed: float = 280.0      ## Velocidade horizontal do tranco ao tomar dano.
-@export var stun_duration: float = 0.25             ## Tempo travado em HURT antes de retomar.
+@export var hit_knockback_speed: float = 280.0      ## Velocidade horizontal do tranco ao tomar dano (base — heavy hits multiplicam).
+@export var stun_duration: float = 0.25             ## Tempo travado em HURT antes de retomar (base — heavy hits multiplicam).
+@export var heavy_hit_threshold: int = 3                  ## Damage ≥ isso → "heavy hit": ativa knockback escalado + stun escalado + hitstop global.
+@export var heavy_hit_knockback_multiplier: float = 1.8   ## Multiplica hit_knockback_speed em heavy hits (280 × 1.8 ≈ 504 px/s).
+@export var heavy_hit_stun_multiplier: float = 1.8        ## Multiplica stun_duration em heavy hits (0.25 × 1.8 ≈ 0.45s).
+@export var heavy_hit_hitstop_duration: float = 0.10      ## Freeze global (Engine.time_scale = 0) em heavy hits. 80–120ms dá peso sem perder fluidez.
+@export var stun_extension_cap: float = 1.0               ## Cap absoluto do timer de HURT quando combos extendem o stun em sequência. Anti stun-lock.
+@export var hurt_gravity_multiplier: float = 0.5          ## Multiplica GRAVITY enquanto em HURT no ar. Menor = juggle aéreo mais flutuante e cadenciado.
 
 @export_group("Respawn")
 @export var respawn_delay: float = 2.0
@@ -137,7 +144,13 @@ func _apply_gravity(delta: float) -> void:
 		# Sem isso, frames de borda em que is_on_floor() oscila deixam velocity.y crescer e o move_and_slide bate/quica.
 		velocity.y = 0.0
 		return
-	velocity.y = minf(velocity.y + GRAVITY * delta, MAX_FALL_SPEED)
+	# Air juggle tweak: em HURT no ar, reduz a gravidade efetiva pelo hurt_gravity_multiplier.
+	# Default 0.5x faz o ninja "flutuar" durante o combo aéreo, dando janela maior pro player
+	# encadear hits antes do toque no chão. Volta ao normal quando sair de HURT.
+	var effective_gravity: float = GRAVITY
+	if current_state == State.HURT:
+		effective_gravity *= hurt_gravity_multiplier
+	velocity.y = minf(velocity.y + effective_gravity * delta, MAX_FALL_SPEED)
 
 func _tick_timers(delta: float) -> void:
 	_state_timer = maxf(_state_timer - delta, 0.0)
@@ -272,9 +285,13 @@ func _state_chase(_delta: float) -> void:
 		_change_state(State.ATTACK)
 		return
 
-	# Pulo: no chão + esbarrando em parede/plataforma + player ≥ 50px acima.
+	# Pulo no CHASE: no chão + esbarrando em GEOMETRIA bloqueante + player significativamente acima.
+	# `is_on_wall()` cobre o caso lateral (ninja bate no lado da plataforma).
+	# `is_on_ceiling()` cobre o caso de cabeça no fundo: a PlatformA tem só 68px entre chão e fundo,
+	# e o ninja tem 96px de altura — então a cabeça bate no teto ANTES da lateral. Sem o check de
+	# ceiling, o ninja fica esmagado embaixo sem pular.
 	# Mantém o ninja em CHASE durante todo o arco — _apply_gravity já cuida do down naturalmente.
-	if is_on_floor() and is_on_wall() and _player.global_position.y < global_position.y - 50.0:
+	if is_on_floor() and (is_on_wall() or is_on_ceiling()) and _player.global_position.y < global_position.y - chase_jump_y_threshold:
 		velocity.y = enemy_jump_velocity
 
 	velocity.x = chase_speed * facing_direction
@@ -357,10 +374,31 @@ func _on_hit_taken(incoming_hitbox: Hitbox) -> void:
 		_die()
 		return
 
-	# Knockback pra longe da direção do ataque.
+	# === ITEM A: tier de peso por damage — heavy hits ganham knockback/stun escalados ===
+	var is_heavy: bool = incoming_hitbox.damage >= heavy_hit_threshold
+	var knockback_mult: float = heavy_hit_knockback_multiplier if is_heavy else 1.0
+	var stun_mult: float = heavy_hit_stun_multiplier if is_heavy else 1.0
+	var scaled_stun: float = stun_duration * stun_mult
+
+	# === ITEM B: hitstop global em heavy hits ANTES do knockback estourar ===
+	# Roda agora pra freeze frame coincidir com o instante do impacto — não depois.
+	if is_heavy:
+		_apply_hitstop(heavy_hit_hitstop_duration)
+
+	# Knockback escalado, sempre afastando o ninja da posição do atacante.
 	var attack_dir: float = _resolve_attack_direction(incoming_hitbox)
-	velocity.x = hit_knockback_speed * attack_dir
-	_change_state(State.HURT)
+	velocity.x = hit_knockback_speed * knockback_mult * attack_dir
+
+	# === ITEM E: fix bouncing HURT ↔ CHASE ===
+	# Se já está em HURT, EXTENDE o timer atual (cap em stun_extension_cap) em vez de
+	# chamar _change_state(HURT) — que seria no-op por causa do mesmo-estado guard.
+	# Isso impede o "soluço": ninja saindo pra CHASE e re-acelerando entre hits do combo.
+	if current_state == State.HURT:
+		_state_timer = minf(_state_timer + scaled_stun, stun_extension_cap)
+	else:
+		_change_state(State.HURT)
+		# _enter_state(HURT) seta _state_timer = stun_duration base. Sobrescrevemos com o escalado.
+		_state_timer = scaled_stun
 
 func _resolve_attack_direction(hb: Hitbox) -> float:
 	## Retorna o sinal (+1 ou -1) da direção em que o golpe empurra o alvo.
@@ -409,6 +447,26 @@ func _respawn_after_delay() -> void:
 	_update_hp_visual()
 	_change_state(State.PATROL)
 	respawned.emit()
+
+# ===========================================================================
+# HITSTOP — Freeze frame global em heavy hits
+# ===========================================================================
+func _apply_hitstop(duration: float) -> void:
+	## Pausa GLOBAL via Engine.time_scale = 0.0 por `duration` segundos.
+	## Afeta toda a cena: _process e _physics_process continuam rodando mas com delta = 0,
+	## então timers, movimento, animação e physics ficam todos congelados juntos.
+	## Usar SOMENTE em heavy hits pra dar peso sem perder fluidez do gameplay normal.
+	if duration <= 0.0:
+		return
+	if Engine.time_scale == 0.0:
+		return # já em hitstop — evita stacking de timers e double-restore
+	Engine.time_scale = 0.0
+	# ignore_time_scale = true (4º arg) é ESSENCIAL: sem isso, o timer usa delta escalado
+	# e nunca decrementa com time_scale = 0, deixando o jogo congelado pra sempre.
+	get_tree().create_timer(duration, true, false, true).timeout.connect(_end_hitstop)
+
+func _end_hitstop() -> void:
+	Engine.time_scale = 1.0
 
 # ===========================================================================
 # PERCEPÇÃO — DetectionArea (Area2D circular)
