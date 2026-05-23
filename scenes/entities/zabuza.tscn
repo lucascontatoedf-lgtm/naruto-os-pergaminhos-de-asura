@@ -1,0 +1,95 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/entities/zabuza.gd" id="1_zabuza"]
+[ext_resource type="Script" path="res://scripts/components/hurtbox.gd" id="2_hurtbox"]
+[ext_resource type="Script" path="res://scripts/components/hitbox.gd" id="3_hitbox"]
+
+[sub_resource type="RectangleShape2D" id="body_shape"]
+size = Vector2(48, 96)
+
+[sub_resource type="RectangleShape2D" id="hurtbox_shape"]
+size = Vector2(52, 100)
+
+[sub_resource type="RectangleShape2D" id="hitbox_melee_shape"]
+size = Vector2(80, 80)
+
+[sub_resource type="RectangleShape2D" id="hitbox_water_dragon_shape"]
+size = Vector2(200, 100)
+
+[sub_resource type="CircleShape2D" id="detection_shape"]
+radius = 500.0
+
+[node name="Zabuza" type="CharacterBody2D"]
+collision_layer = 64
+collision_mask = 1
+script = ExtResource("1_zabuza")
+
+[node name="Visual" type="Node2D" parent="."]
+
+[node name="Body" type="Polygon2D" parent="Visual"]
+polygon = PackedVector2Array(-24, -96, 24, -96, 24, 0, -24, 0)
+color = Color(0.2, 0.25, 0.4, 1)
+
+[node name="FaceMarker" type="Polygon2D" parent="Visual"]
+polygon = PackedVector2Array(8, -80, 20, -72, 8, -64)
+color = Color(0.92, 0.92, 0.95, 1)
+
+[node name="BodyShape" type="CollisionShape2D" parent="."]
+position = Vector2(0, -48)
+shape = SubResource("body_shape")
+
+[node name="Hurtbox" type="Area2D" parent="."]
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("2_hurtbox")
+
+[node name="HurtboxShape" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -48)
+shape = SubResource("hurtbox_shape")
+
+[node name="HitboxMelee" type="Area2D" parent="."]
+position = Vector2(50, -48)
+collision_layer = 16
+collision_mask = 32
+monitoring = false
+monitorable = false
+script = ExtResource("3_hitbox")
+damage = 2
+
+[node name="HitboxMeleeShape" type="CollisionShape2D" parent="HitboxMelee"]
+shape = SubResource("hitbox_melee_shape")
+
+[node name="HitboxWaterDragon" type="Area2D" parent="."]
+position = Vector2(120, -48)
+collision_layer = 16
+collision_mask = 32
+monitoring = false
+monitorable = false
+script = ExtResource("3_hitbox")
+damage = 3
+
+[node name="HitboxWaterDragonShape" type="CollisionShape2D" parent="HitboxWaterDragon"]
+shape = SubResource("hitbox_water_dragon_shape")
+
+[node name="DetectionArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 128
+
+[node name="DetectionShape" type="CollisionShape2D" parent="DetectionArea"]
+shape = SubResource("detection_shape")
+
+[node name="LaughSFX" type="AudioStreamPlayer2D" parent="."]
+max_distance = 1500.0
+attenuation = 1.5
+
+[node name="HPBar" type="Node2D" parent="."]
+position = Vector2(0, -116)
+
+[node name="Background" type="Polygon2D" parent="HPBar"]
+polygon = PackedVector2Array(-40, -5, 40, -5, 40, 5, -40, 5)
+color = Color(0.15, 0.15, 0.15, 0.85)
+
+[node name="Fill" type="Polygon2D" parent="HPBar"]
+position = Vector2(-40, 0)
+polygon = PackedVector2Array(0, -5, 80, -5, 80, 5, 0, 5)
+color = Color(0.85, 0.3, 0.3, 1)

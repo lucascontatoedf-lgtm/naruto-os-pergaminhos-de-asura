@@ -1,9 +1,10 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="Script" path="res://scripts/ui/debug_hud.gd" id="2_hud_script"]
 [ext_resource type="PackedScene" path="res://scenes/entities/dummy.tscn" id="3_dummy"]
 [ext_resource type="PackedScene" path="res://scenes/entities/melee_ninja.tscn" id="4_melee_ninja"]
+[ext_resource type="PackedScene" path="res://scenes/entities/zabuza.tscn" id="5_zabuza"]
 
 [sub_resource type="RectangleShape2D" id="floor_shape"]
 size = Vector2(2400, 64)
@@ -58,6 +59,9 @@ position = Vector2(280, 368)
 
 [node name="MeleeNinja" parent="." instance=ExtResource("4_melee_ninja")]
 position = Vector2(-150, 368)
+
+[node name="Zabuza" parent="." instance=ExtResource("5_zabuza")]
+position = Vector2(700, 368)
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
 position = Vector2(0, 200)
