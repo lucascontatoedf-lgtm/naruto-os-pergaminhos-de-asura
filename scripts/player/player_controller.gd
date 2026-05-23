@@ -43,6 +43,13 @@ const SHURIKEN_SCENE: PackedScene = preload("res://scenes/entities/shuriken.tscn
 @export var attack_cancel_window_ratio: float = 0.25 ## Fração FINAL da duração em que a trava de movimento abre e o player aceita input de novo.
 @export var combo_dash_speed: float = 250.0          ## Micro-impulso de velocity.x a cada hit conectado no combo. Decai pela friction em poucos frames — dá um "tranco" sutil de ganho de terreno.
 
+@export_group("Dash")
+@export var dash_distance: float = 200.0              ## Distância percorrida em pixels (não velocidade). Speed é calculado em runtime: dash_distance / dash_duration. Spec do jogador: dash = 200px.
+@export var dash_duration: float = 0.20               ## Duração do dash em segundos. Spec do jogador: timer rígido de 0.2s. Speed efetivo = dash_distance / dash_duration (default 200 / 0.20 = 1000 px/s — visível mas rápido).
+@export var dash_double_tap_window: float = 0.20      ## Janela em segundos entre o 1º e o 2º tap na MESMA direção. Acima disso, considera-se tap solo (cancelado).
+@export var dash_cooldown: float = 0.40               ## Tempo mínimo entre dashes. Impede spam de double-tap encadeado.
+@export var dash_iframe_buffer: float = 0.05          ## Margem de i-frames APÓS o dash terminar — janela pra perdoar reação atrasada do player vs. AMBUSH do Zabuza.
+
 @export_group("Vida")
 @export var max_health: int = 5                        ## Vida total. Quando current_health chega a 0 → DEATH → respawn.
 @export var hurt_stun_duration: float = 0.4            ## Tempo travado em HURT (frames de hitstun) antes de retomar IDLE/FALL.
@@ -62,6 +69,7 @@ enum State {
 	JUMP,
 	FALL,
 	CROUCH,
+	DASH,           ## Disparado por double-tap em move_left/right. Override horizontal + i-frames + sem gravidade.
 	ATTACK,
 	SPECIAL,
 	CHAKRA_CHARGE,
@@ -105,6 +113,15 @@ var _jumps_made: int = 0
 
 # Flags auxiliares
 var _current_attack_kind: String = ""
+## Snapshot: o ataque atual começou no estado CROUCH? Setado em _try_start_attack
+## antes da troca pra State.ATTACK (que apaga o contexto original). Lido em
+## _throw_shuriken pra escolher entre marker stand (peito) ou crouch (joelho).
+var _attack_started_from_crouch: bool = false
+
+# Dash — double-tap detection
+var _last_tap_dir: int = 0                ## -1 = esquerda, +1 = direita, 0 = nenhum (janela expirada).
+var _last_tap_window_timer: float = 0.0   ## Contagem regressiva da janela de double-tap (dash_double_tap_window).
+var _dash_cooldown_timer: float = 0.0     ## Contagem regressiva do cooldown entre dashes.
 
 # Posição capturada em _ready; alvo do respawn quando o player cruza a kill zone.
 var _spawn_position: Vector2 = Vector2.ZERO
@@ -118,6 +135,8 @@ var _hitbox_by_kind: Dictionary = {}
 @onready var hitbox_light: Hitbox = $HitboxLight
 @onready var hitbox_special: Hitbox = $HitboxSpecial
 @onready var hurtbox: Hurtbox = $Hurtbox
+@onready var shuriken_spawn_stand: Marker2D = $ShurikenSpawnStand     ## Origem da shuriken em pé (altura do peito/ombro).
+@onready var shuriken_spawn_crouch: Marker2D = $ShurikenSpawnCrouch   ## Origem da shuriken agachado (altura do joelho/cintura).
 # @onready var animation_player: AnimationPlayer = $AnimationPlayer
 # Heavy não tem mais Area2D no Player — virou projétil (Shuriken) instanciado em _throw_shuriken().
 
@@ -169,6 +188,12 @@ func _tick_timers(delta: float) -> void:
 	_jump_buffer_timer = maxf(_jump_buffer_timer - delta, 0.0)
 	_state_timer = maxf(_state_timer - delta, 0.0)
 	_invulnerability_timer = maxf(_invulnerability_timer - delta, 0.0)
+	# Dash: janela de double-tap (zera _last_tap_dir ao expirar pra evitar match falso depois)
+	# e cooldown entre dashes.
+	_last_tap_window_timer = maxf(_last_tap_window_timer - delta, 0.0)
+	if _last_tap_window_timer <= 0.0:
+		_last_tap_dir = 0
+	_dash_cooldown_timer = maxf(_dash_cooldown_timer - delta, 0.0)
 
 func _buffer_jump_input() -> void:
 	if Input.is_action_just_pressed("jump"):
@@ -235,7 +260,7 @@ func _regenerate_chakra(delta: float) -> void:
 	current_chakra = minf(current_chakra + chakra_regen_rate * delta, max_chakra)
 	chakra_changed.emit(current_chakra, max_chakra)
 
-func _spend_chakra(amount: float) -> bool:
+func spend_chakra(amount: float) -> bool:
 	if current_chakra < amount:
 		return false
 	current_chakra -= amount
@@ -260,6 +285,11 @@ func _respawn() -> void:
 	## signals do DebugHUD reconectem do zero no _ready() do novo Player — sem acúmulo
 	## de estado entre vidas. O engine processa o reload no fim do frame atual,
 	## então qualquer linha após esta no callstack ainda roda em segurança.
+	## SALVAGUARDA: força Engine.time_scale = 1.0 ANTES do reload pra eliminar o risco
+	## de congelamento permanente. Cenário coberto: reload coincide com hitstop ativo do
+	## MeleeNinja → o callback _end_hitstop pertenceria a um nó que será freed pelo reload,
+	## então nunca dispara, e o jogo ficaria preso em time_scale = 0.0 pra sempre.
+	Engine.time_scale = 1.0
 	get_tree().reload_current_scene()
 
 # ===========================================================================
@@ -272,6 +302,7 @@ func _process_current_state(delta: float) -> void:
 		State.JUMP:          _state_jump(delta)
 		State.FALL:          _state_fall(delta)
 		State.CROUCH:        _state_crouch(delta)
+		State.DASH:          _state_dash(delta)
 		State.ATTACK:        _state_attack(delta)
 		State.SPECIAL:       _state_special(delta)
 		State.CHAKRA_CHARGE: _state_chakra_charge(delta)
@@ -301,6 +332,22 @@ func _enter_state(state: State) -> void:
 		State.CROUCH:
 			velocity.x = 0.0
 			_play_animation("crouch")
+		State.DASH:
+			# Trava de movimento e gravidade: velocity.x fica fixa em (dash_distance/dash_duration)
+			# pelo _state_dash, velocity.y é zerada pra dash horizontal puro.
+			# Speed derivado da distância garante que tunar dash_distance = 200 sempre dá 200px,
+			# independente da duração escolhida (game design pensa em distância, não em px/s).
+			# I-frames cobrem dash_duration + dash_iframe_buffer (margem pós-dash) pra
+			# perdoar a janela de reação no AMBUSH do Zabuza.
+			_state_timer = dash_duration
+			_invulnerability_timer = dash_duration + dash_iframe_buffer
+			_dash_cooldown_timer = dash_cooldown
+			velocity.x = (dash_distance / dash_duration) * facing_direction
+			velocity.y = 0.0
+			# Reseta tap tracker pra impedir triple-tap-chain dash → dash → dash.
+			_last_tap_dir = 0
+			_last_tap_window_timer = 0.0
+			_play_animation("dash")
 		State.ATTACK:
 			_state_timer = light_attack_duration if _current_attack_kind == "light" else heavy_attack_duration
 			attack_started.emit(_current_attack_kind)
@@ -308,7 +355,7 @@ func _enter_state(state: State) -> void:
 			_play_animation("attack_" + _current_attack_kind)
 		State.SPECIAL:
 			_state_timer = special_duration
-			_spend_chakra(rasengan_chakra_cost)
+			spend_chakra(rasengan_chakra_cost)
 			velocity.x = rasengan_dash_speed * facing_direction # dash curto pra frente; friction decai naturalmente
 			special_started.emit()
 			_enable_attack_hitbox("special")
@@ -340,6 +387,13 @@ func _exit_state(state: State) -> void:
 			_current_attack_kind = ""
 		State.SPECIAL:
 			_disable_attack_hitbox("special")
+		State.DASH:
+			# BUG-FIX crítico: ao sair do dash, velocity.x ainda está em ~1000-2000 px/s.
+			# Sem clamp, a friction natural leva ~0.25s pra zerar — o player desliza MUITO além
+			# dos 200px nominais ("atravessa o mapa"). Clamp pra move_speed garante saída suave:
+			# se player segura direção, continua correndo nessa velocidade; se solta, friction
+			# do _state_idle/move decai de 320 → 0 em poucos frames.
+			velocity.x = clampf(velocity.x, -move_speed, move_speed)
 			special_ended.emit()
 
 # ===========================================================================
@@ -348,6 +402,7 @@ func _exit_state(state: State) -> void:
 func _state_idle(delta: float) -> void:
 	_apply_horizontal_movement(delta, 0.0)
 
+	if _try_start_dash():          return
 	if _try_start_attack():        return
 	if _try_start_special():       return
 	if _try_start_chakra_charge(): return
@@ -362,6 +417,7 @@ func _state_move(delta: float) -> void:
 	var axis: float = _get_move_input()
 	_apply_horizontal_movement(delta, axis)
 
+	if _try_start_dash():          return
 	if _try_start_attack():        return
 	if _try_start_special():       return
 	if _has_buffered_jump():       _change_state(State.JUMP); return
@@ -384,6 +440,8 @@ func _state_jump(delta: float) -> void:
 		_play_animation("jump")
 		return
 
+	if _try_start_dash():
+		return
 	if _try_start_attack():
 		return
 
@@ -392,6 +450,9 @@ func _state_jump(delta: float) -> void:
 
 func _state_fall(delta: float) -> void:
 	_apply_horizontal_movement(delta, _get_move_input())
+
+	if _try_start_dash():
+		return
 
 	# Permite jump bufferizado durante coyote time (pulo após sair de plataforma).
 	if _has_buffered_jump():
@@ -406,6 +467,17 @@ func _state_fall(delta: float) -> void:
 			_change_state(State.MOVE)
 		else:
 			_change_state(State.IDLE)
+
+func _state_dash(_delta: float) -> void:
+	# Override total: ignora input do player, gravidade zerada, velocity.x travada.
+	# _apply_gravity já rodou em _physics_process; aqui anulamos pra dash horizontal puro.
+	# Speed = dash_distance / dash_duration, recalculado por frame pra refletir tuning live no inspector.
+	velocity.y = 0.0
+	velocity.x = (dash_distance / dash_duration) * facing_direction
+
+	if _state_timer <= 0.0:
+		# Saída: FALL se ainda no ar, senão IDLE. Velocity residual é decaída pela friction natural.
+		_change_state(State.FALL if not is_on_floor() else State.IDLE)
 
 func _state_crouch(delta: float) -> void:
 	_apply_horizontal_movement(delta, 0.0)
@@ -477,10 +549,13 @@ func _state_death(delta: float) -> void:
 func _try_start_attack() -> bool:
 	if Input.is_action_just_pressed("attack_light"):
 		_current_attack_kind = "light"
+		# Captura origem ANTES do _change_state (que sobrescreve current_state).
+		_attack_started_from_crouch = (current_state == State.CROUCH)
 		_change_state(State.ATTACK)
 		return true
 	if Input.is_action_just_pressed("attack_heavy") and current_chakra >= shuriken_chakra_cost:
 		_current_attack_kind = "heavy"
+		_attack_started_from_crouch = (current_state == State.CROUCH)
 		_change_state(State.ATTACK)
 		return true
 	return false
@@ -489,6 +564,31 @@ func _try_start_special() -> bool:
 	if Input.is_action_just_pressed("special") and has_chakra_for_special():
 		_change_state(State.SPECIAL)
 		return true
+	return false
+
+func _try_start_dash() -> bool:
+	## Double-tap detection em move_left / move_right.
+	## Fluxo: 1º tap arma janela (_last_tap_dir + _last_tap_window_timer). 2º tap na MESMA
+	## direção, com janela ainda viva → dispara DASH. Janela expirada zera tap dir em _tick_timers.
+	## Cooldown trava no portão: se _dash_cooldown_timer > 0, ignora qualquer tap.
+	if _dash_cooldown_timer > 0.0:
+		return false
+	var tap_dir: int = 0
+	if Input.is_action_just_pressed("move_right"):
+		tap_dir = 1
+	elif Input.is_action_just_pressed("move_left"):
+		tap_dir = -1
+	if tap_dir == 0:
+		return false   # nenhum tap neste frame
+	# 2º tap na MESMA direção dentro da janela → dash. Força facing pra direção do tap
+	# (cobre caso do player estar virado pra um lado e dar double-tap pro outro).
+	if tap_dir == _last_tap_dir and _last_tap_window_timer > 0.0:
+		facing_direction = tap_dir
+		_change_state(State.DASH)
+		return true
+	# 1º tap (ou direção diferente do anterior): arma janela pra próximo tap.
+	_last_tap_dir = tap_dir
+	_last_tap_window_timer = dash_double_tap_window
 	return false
 
 func _try_start_chakra_charge() -> bool:
@@ -561,10 +661,19 @@ func _tick_attack_lock(delta: float, duration: float) -> void:
 		_apply_horizontal_movement(delta, _get_move_input())
 
 func _throw_shuriken() -> void:
-	_spend_chakra(shuriken_chakra_cost)
+	spend_chakra(shuriken_chakra_cost)
 	var shuriken: Shuriken = SHURIKEN_SCENE.instantiate() as Shuriken
 	shuriken.direction = Vector2(facing_direction, 0)
-	shuriken.global_position = global_position + Vector2(30 * facing_direction, -48)
+	# Origem dinâmica: marker do CROUCH (joelho) se o ataque começou agachado;
+	# senão marker do STAND (peito/ombro). Snapshot capturado em _try_start_attack
+	# porque current_state já é ATTACK aqui.
+	# OBS: marker.position é LOCAL e fica no lado canônico +X. Espelhamos X via
+	# facing_direction porque o visual do Player ainda não flipa (não tem scale.x = -1
+	# nem AnimatedSprite2D.flip_h). Quando virar sprite com flip, dá pra simplificar
+	# pra `shuriken.global_position = marker.global_position` direto.
+	var marker: Marker2D = shuriken_spawn_crouch if _attack_started_from_crouch else shuriken_spawn_stand
+	var local: Vector2 = marker.position
+	shuriken.global_position = global_position + Vector2(local.x * facing_direction, local.y)
 	get_parent().add_child(shuriken)
 
 # ===========================================================================
