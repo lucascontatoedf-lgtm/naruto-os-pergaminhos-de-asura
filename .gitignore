@@ -9,6 +9,12 @@
 # abra o projeto numa versão antiga
 .import/
 
+# .import companions de assets em documentation/ — Godot gera um .import pra
+# CADA PNG que detecta no projeto, inclusive screenshots de docs (que não são
+# carregados via res://). Esses .import poluem o status sem agregar valor.
+# Os .png originais continuam tracked normalmente.
+documentation/**/*.import
+
 # Builds e configs de export específicos do ambiente local
 /android/
 export.cfg
