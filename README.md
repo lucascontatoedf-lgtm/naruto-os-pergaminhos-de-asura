@@ -3,8 +3,6 @@
 > **Vertical Slice** focado em mecânicas estritas de combate 2D e Inteligência Artificial preditiva.
 > Engine: **Godot 4.6** (Forward Plus + Jolt Physics) — GDScript tipado, código modular, signals-first.
 
-![Visão geral do MVP em execução — Player, Dummy e MeleeNinja na cena de teste](documentation/prints/Captura%20de%20tela%202026-05-22%20051859.png)
-
 ---
 
 ## 1. Apresentação Geral
@@ -28,8 +26,6 @@ A modularidade do projeto se apoia em **três pilares de isolamento**:
 1. **Entidades físicas** — `CharacterBody2D` para corpos com movimento próprio (Player, MeleeNinja) e `StaticBody2D` para geometria estática (Floor, Plataformas, Dummy de teste). Nenhum desses interage com a camada de combate diretamente.
 2. **Áreas reativas** — `Area2D` para todo o pipeline de detecção de impacto (`Hitbox` ofensiva, `Hurtbox` defensiva, `DetectionArea` de percepção). Vivem em layers próprias e não influenciam fisicamente o `CharacterBody2D` pai.
 3. **Camada de apresentação** — `CanvasLayer` independente para o HUD de debug, plugado diretamente nos signals do `PlayerController` (`state_changed`, `chakra_changed`) sem nenhum polling por frame.
-
-![Scene Tree expandida no Godot Editor — TestStage com Player, Dummy, MeleeNinja e DebugHUD](documentation/prints/Captura%20de%20tela%202026-05-22%20052151.png)
 
 ### Árvore de cenas resumida
 
@@ -79,8 +75,6 @@ TestStage (Node2D)
 
 ## 3. Sistemas de Combate e Recursos
 
-![Combate em ação — combo conectando no MeleeNinja com knockback visível](documentation/prints/Captura%20de%20tela%202026-05-22%20052216.png)
-
 ### Combo Leve (Tecla **H**) — 3 hits encadeados com micro-dash automático
 
 O combo opera dentro de uma **cancel window** definida pelo último 25% da duração de cada ataque (`attack_cancel_window_ratio = 0.25`). Apertar **H** novamente dentro dessa janela reentra o estado `ATTACK` aplicando um **micro-impulso de `velocity.x = 250 px/s * facing_direction`** (decai pela friction natural em ~5 frames), dando ao Naruto um leve "tranco" pra frente a cada hit conectado.
@@ -122,8 +116,6 @@ O `State.SPECIAL` aplica um impulso `velocity.x = 1300 * facing_direction` no mo
 ### Gerenciamento dinâmico de Chakra
 
 A barra de 0–100 é o recurso central do combate. Os custos altos (40 / 70) impõem uma **decisão tática contínua**: stockar pra Rasengan ou gastar em shurikens?
-
-![Chakra em consumo durante combate — barra parcial visível na HUD](documentation/prints/Captura%20de%20tela%202026-05-22%20052329.png)
 
 | Fonte | Variação |
 |---|---|
@@ -187,8 +179,6 @@ A robustez deste ciclo se apoia em três princípios arquiteturais estabelecidos
 ---
 
 ## 4. Máquina de Estados Finitas (FSM) do Inimigo
-
-![MeleeNinja em combate — chase e attack contra o Player](documentation/prints/Captura%20de%20tela%202026-05-22%20052700.png)
 
 O `MeleeNinja.gd` implementa uma FSM enum-based com **6 estados** e signal `state_changed(previous, new)` plugável em UI, áudio e VFX futuros.
 
@@ -268,8 +258,6 @@ Filtrar via `is PlayerController` em vez de criar uma layer `player_body` dedica
 ---
 
 ## 5. IA de Movimentação Vertical — Pulo Preditivo no CHASE
-
-![Naruto em pulo com chakra baixo — escalada vertical de plataformas](documentation/prints/Captura%20de%20tela%202026-05-22%20053018.png)
 
 A IA do `MeleeNinja` ganhou um **gatilho de pulo dentro do estado CHASE** para impedir que o jogador escape verticalmente subindo em plataformas flutuantes.
 
