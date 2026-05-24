@@ -1,0 +1,80 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/dialogue_box.gd" id="1_box_script"]
+
+[node name="DialogueBox" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_box_script")
+
+; ----------------------------------------------------------------------------
+; PANEL — balão principal de diálogo. Bottom-centered, 600x120.
+; ----------------------------------------------------------------------------
+[node name="Panel" type="Panel" parent="."]
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -300.0
+offset_top = -140.0
+offset_right = 300.0
+offset_bottom = -20.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = 10.0
+offset_right = -14.0
+offset_bottom = -10.0
+theme_override_constants/separation = 4
+
+[node name="NameLabel" type="Label" parent="Panel/VBoxContainer"]
+text = "Speaker"
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 0.65, 0.15, 1)
+
+[node name="TextLabel" type="Label" parent="Panel/VBoxContainer"]
+text = "Linha de diálogo..."
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+autowrap_mode = 2
+size_flags_vertical = 3
+
+[node name="PromptLabel" type="Label" parent="Panel/VBoxContainer"]
+text = "[ J ] Continuar"
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+horizontal_alignment = 2
+
+; ----------------------------------------------------------------------------
+; RASENGA LABEL — balão flutuante independente, top-center.
+;
+; DESVIO INTENCIONAL DA SPEC (aprovado na sessão de implementação Bloco 3):
+;   - Spec original colocava RasengaLabel como FILHO do Panel
+;   - Filho de Panel bottom-anchored (600x120) não consegue posicionar central-topo
+;     do viewport — herda as offsets restritas do Panel pai
+;   - Decisão técnica: mover pra SIBLING do Panel (filho direto do CanvasLayer)
+;     pra ancoragem livre relativa ao viewport
+;
+; Benefício adicional: pode aparecer SEM o balão de diálogo (Rasengan cast no
+; gameplay normal, sem pausar — DialogueManager.show_rasengan_balloon()).
+; ----------------------------------------------------------------------------
+[node name="RasengaLabel" type="Label" parent="."]
+visible = false
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 0.0
+offset_left = -200.0
+offset_top = 40.0
+offset_right = 200.0
+offset_bottom = 100.0
+text = "RASENGAAAAAA!!!"
+theme_override_font_sizes/font_size = 36
+theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Timer" type="Timer" parent="RasengaLabel"]
+one_shot = true
+wait_time = 1.5

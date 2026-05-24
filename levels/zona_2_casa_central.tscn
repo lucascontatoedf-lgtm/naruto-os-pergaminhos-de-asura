@@ -1,7 +1,7 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 ; ============================================================================
-; Zona 2 — Casa Central (PLACEHOLDER MÍNIMO)
+; Zona 2 — Casa Central (PLACEHOLDER MÍNIMO + TESTE DIALOGUESYSTEM)
 ;
 ; Existência justificada: RESPAWN_ZONE do LevelManager aponta pra cá. Sem este
 ; arquivo, qualquer morte (kill zone OR HP=0) em qualquer zona quebra o respawn.
@@ -10,6 +10,7 @@
 ;   - Chão wide (StaticBody2D + Polygon2D + CollisionShape2D)
 ;   - Player spawn
 ;   - Label2D de marcação visual ("Zona 2 — Casa Central")
+;   - DialogueTrigger em AUTO com dialogue_id = "jiraiya_intro" (teste do Bloco 3)
 ;
 ; Substituir por design real (Casa Central com NPCs, Pain no trono, Konan/Tobi,
 ; diálogo do Pergaminho de Asura, Kamui pra te jogar fora) conforme spec do
@@ -19,6 +20,7 @@
 ; ============================================================================
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://scenes/components/dialogue_trigger.tscn" id="2_dialogue_trigger"]
 
 [sub_resource type="RectangleShape2D" id="floor_shape"]
 size = Vector2(2400, 64)
@@ -44,3 +46,9 @@ horizontal_alignment = 1
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
 position = Vector2(0, 200)
+
+[node name="JiraiyaTrigger" parent="." instance=ExtResource("2_dialogue_trigger")]
+position = Vector2(0, 320)
+mode = "AUTO"
+dialogue_id = "jiraiya_intro"
+one_shot = true
