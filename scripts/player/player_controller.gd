@@ -301,7 +301,7 @@ func _respawn() -> void:
 	## MeleeNinja → o callback _end_hitstop pertenceria a um nó que será freed pelo reload,
 	## então nunca dispara, e o jogo ficaria preso em time_scale = 0.0 pra sempre.
 	Engine.time_scale = 1.0
-	get_tree().reload_current_scene()
+	LevelManager.restart_zone()
 
 # ===========================================================================
 # MÁQUINA DE ESTADOS — DISPATCH

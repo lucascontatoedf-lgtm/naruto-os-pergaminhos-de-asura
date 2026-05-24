@@ -15,6 +15,10 @@ run/main_scene="res://scenes/test_stage.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+LevelManager="*res://scripts/systems/level_manager.gd"
+
 [input]
 
 move_left={
