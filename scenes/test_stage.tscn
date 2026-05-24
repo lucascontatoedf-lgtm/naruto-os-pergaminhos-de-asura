@@ -65,7 +65,7 @@ color = Color(0.45, 0.45, 0.5, 1)
 polygon = PackedVector2Array(-20, -200, 20, -200, 20, 200, -20, 200)
 
 [node name="WallCollision" type="CollisionShape2D" parent="TestWall" unique_id=1883004626]
-position = Vector2(1, -89.5)
+position = Vector2(0, -89)
 shape = SubResource("wall_shape")
 
 [node name="Dummy" parent="." unique_id=189516287 instance=ExtResource("3_dummy")]

@@ -1,0 +1,46 @@
+[gd_scene load_steps=4 format=3]
+
+; ============================================================================
+; Zona 2 — Casa Central (PLACEHOLDER MÍNIMO)
+;
+; Existência justificada: RESPAWN_ZONE do LevelManager aponta pra cá. Sem este
+; arquivo, qualquer morte (kill zone OR HP=0) em qualquer zona quebra o respawn.
+;
+; Conteúdo deliberadamente esquelético:
+;   - Chão wide (StaticBody2D + Polygon2D + CollisionShape2D)
+;   - Player spawn
+;   - Label2D de marcação visual ("Zona 2 — Casa Central")
+;
+; Substituir por design real (Casa Central com NPCs, Pain no trono, Konan/Tobi,
+; diálogo do Pergaminho de Asura, Kamui pra te jogar fora) conforme spec do
+; SUGESTOES.md #05 — quando entrar na pipeline de Semana 2/3.
+;
+; Estilo Polygon2D primitivo (mesma convenção de test_stage + Floresta da Névoa).
+; ============================================================================
+
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
+
+[sub_resource type="RectangleShape2D" id="floor_shape"]
+size = Vector2(2400, 64)
+
+[node name="ZonaCasaCentral" type="Node2D"]
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(0, 400)
+
+[node name="FloorVisual" type="Polygon2D" parent="Floor"]
+polygon = PackedVector2Array(-1200, -32, 1200, -32, 1200, 32, -1200, 32)
+color = Color(0.22, 0.18, 0.16, 1)
+
+[node name="FloorCollision" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("floor_shape")
+
+[node name="ZoneLabel" type="Label2D" parent="."]
+position = Vector2(0, 50)
+text = "Zona 2 — Casa Central (placeholder)"
+font_size = 28
+modulate = Color(0.95, 0.85, 0.55, 1)
+horizontal_alignment = 1
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(0, 200)
