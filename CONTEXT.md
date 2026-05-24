@@ -4,6 +4,12 @@
 
 ---
 
+## Como usar este arquivo
+- Cole o conteúdo deste arquivo no início de cada nova sessão de chat
+- Peça "Atualiza o CONTEXT.md" ao final de cada sessão antes do último commit
+
+---
+
 ## Stack
 - GDScript, 2D platformer, uso pessoal (máquina única, sem distribuição)
 - Input: Teclado (WASD/Setas + J/K/O/Shift) — sem suporte a controle
