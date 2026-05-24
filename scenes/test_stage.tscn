@@ -1,7 +1,7 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene format=3 uid="uid://cjkt2xgkywvg4"]
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
-[ext_resource type="Script" path="res://scripts/ui/debug_hud.gd" id="2_hud_script"]
+[ext_resource type="Script" uid="uid://bbs848svnmaig" path="res://scripts/ui/debug_hud.gd" id="2_hud_script"]
 [ext_resource type="PackedScene" path="res://scenes/entities/dummy.tscn" id="3_dummy"]
 [ext_resource type="PackedScene" path="res://scenes/entities/melee_ninja.tscn" id="4_melee_ninja"]
 [ext_resource type="PackedScene" path="res://scenes/entities/zabuza.tscn" id="5_zabuza"]
@@ -12,97 +12,118 @@ size = Vector2(2400, 64)
 [sub_resource type="RectangleShape2D" id="platform_shape"]
 size = Vector2(240, 32)
 
-[node name="TestStage" type="Node2D"]
+[sub_resource type="RectangleShape2D" id="wall_shape"]
+size = Vector2(38, 579)
 
-[node name="Floor" type="StaticBody2D" parent="."]
+[node name="TestStage" type="Node2D" unique_id=2036983760]
+
+[node name="Floor" type="StaticBody2D" parent="." unique_id=840444849]
 position = Vector2(0, 400)
 
-[node name="FloorVisual" type="Polygon2D" parent="Floor"]
-polygon = PackedVector2Array(-1200, -32, 1200, -32, 1200, 32, -1200, 32)
+[node name="FloorVisual" type="Polygon2D" parent="Floor" unique_id=1935041629]
 color = Color(0.28, 0.24, 0.18, 1)
+polygon = PackedVector2Array(-1200, -32, 1200, -32, 1200, 32, -1200, 32)
 
-[node name="FloorCollision" type="CollisionShape2D" parent="Floor"]
+[node name="FloorCollision" type="CollisionShape2D" parent="Floor" unique_id=596046788]
 shape = SubResource("floor_shape")
 
-[node name="PlatformA" type="StaticBody2D" parent="."]
+[node name="PlatformA" type="StaticBody2D" parent="." unique_id=51109613]
 position = Vector2(-400, 284)
 
-[node name="VisualA" type="Polygon2D" parent="PlatformA"]
-polygon = PackedVector2Array(-120, -16, 120, -16, 120, 16, -120, 16)
+[node name="VisualA" type="Polygon2D" parent="PlatformA" unique_id=1706654488]
 color = Color(0.35, 0.3, 0.22, 1)
+polygon = PackedVector2Array(-120, -16, 120, -16, 120, 16, -120, 16)
 
-[node name="CollisionA" type="CollisionShape2D" parent="PlatformA"]
+[node name="CollisionA" type="CollisionShape2D" parent="PlatformA" unique_id=1079301206]
 shape = SubResource("platform_shape")
 
-[node name="PlatformB" type="StaticBody2D" parent="."]
+[node name="PlatformB" type="StaticBody2D" parent="." unique_id=718503675]
 position = Vector2(40, 184)
 
-[node name="VisualB" type="Polygon2D" parent="PlatformB"]
-polygon = PackedVector2Array(-120, -16, 120, -16, 120, 16, -120, 16)
+[node name="VisualB" type="Polygon2D" parent="PlatformB" unique_id=416179304]
 color = Color(0.35, 0.3, 0.22, 1)
+polygon = PackedVector2Array(-120, -16, 120, -16, 120, 16, -120, 16)
 
-[node name="CollisionB" type="CollisionShape2D" parent="PlatformB"]
+[node name="CollisionB" type="CollisionShape2D" parent="PlatformB" unique_id=1531260079]
 shape = SubResource("platform_shape")
 
-[node name="PlatformC" type="StaticBody2D" parent="."]
+[node name="PlatformC" type="StaticBody2D" parent="." unique_id=349296665]
 position = Vector2(520, 104)
 
-[node name="VisualC" type="Polygon2D" parent="PlatformC"]
-polygon = PackedVector2Array(-120, -16, 120, -16, 120, 16, -120, 16)
+[node name="VisualC" type="Polygon2D" parent="PlatformC" unique_id=601038958]
 color = Color(0.35, 0.3, 0.22, 1)
+polygon = PackedVector2Array(-120, -16, 120, -16, 120, 16, -120, 16)
 
-[node name="CollisionC" type="CollisionShape2D" parent="PlatformC"]
+[node name="CollisionC" type="CollisionShape2D" parent="PlatformC" unique_id=179209862]
 shape = SubResource("platform_shape")
 
-[node name="Dummy" parent="." instance=ExtResource("3_dummy")]
+[node name="TestWall" type="StaticBody2D" parent="." unique_id=962337123]
+position = Vector2(-900, 168)
+
+[node name="WallVisual" type="Polygon2D" parent="TestWall" unique_id=948246190]
+color = Color(0.45, 0.45, 0.5, 1)
+polygon = PackedVector2Array(-20, -200, 20, -200, 20, 200, -20, 200)
+
+[node name="WallCollision" type="CollisionShape2D" parent="TestWall" unique_id=1883004626]
+position = Vector2(1, -89.5)
+shape = SubResource("wall_shape")
+
+[node name="Dummy" parent="." unique_id=189516287 instance=ExtResource("3_dummy")]
 position = Vector2(280, 368)
 
-[node name="MeleeNinja" parent="." instance=ExtResource("4_melee_ninja")]
+[node name="MeleeNinja" parent="." unique_id=1850455435 instance=ExtResource("4_melee_ninja")]
 position = Vector2(-150, 368)
 
-[node name="Zabuza" parent="." instance=ExtResource("5_zabuza")]
+[node name="Zabuza" parent="." unique_id=662771475 instance=ExtResource("5_zabuza")]
 position = Vector2(700, 368)
 
-[node name="Player" parent="." instance=ExtResource("1_player")]
+[node name="Player" parent="." unique_id=160438161 instance=ExtResource("1_player")]
 position = Vector2(0, 200)
 
-[node name="DebugHUD" type="CanvasLayer" parent="."]
+[node name="DebugHUD" type="CanvasLayer" parent="." unique_id=942475291]
 script = ExtResource("2_hud_script")
 
-[node name="Root" type="Control" parent="DebugHUD"]
+[node name="Root" type="Control" parent="DebugHUD" unique_id=1640004723]
+layout_mode = 3
+anchors_preset = 0
 offset_left = 12.0
 offset_top = 12.0
 offset_right = 320.0
 offset_bottom = 122.0
 mouse_filter = 2
 
-[node name="Background" type="ColorRect" parent="DebugHUD/Root"]
+[node name="Background" type="ColorRect" parent="DebugHUD/Root" unique_id=527439308]
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.04, 0.04, 0.08, 0.72)
 mouse_filter = 2
+color = Color(0.04, 0.04, 0.08, 0.72)
 
-[node name="VBox" type="VBoxContainer" parent="DebugHUD/Root"]
+[node name="VBox" type="VBoxContainer" parent="DebugHUD/Root" unique_id=246767810]
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 14.0
 offset_top = 10.0
 offset_right = -14.0
 offset_bottom = -10.0
-theme_override_constants/separation = 6
 mouse_filter = 2
+theme_override_constants/separation = 6
 
-[node name="StateLabel" type="Label" parent="DebugHUD/Root/VBox"]
-text = "Estado: --"
-theme_override_font_sizes/font_size = 20
+[node name="StateLabel" type="Label" parent="DebugHUD/Root/VBox" unique_id=380164954]
+layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.95, 0.7, 1)
-
-[node name="HealthLabel" type="Label" parent="DebugHUD/Root/VBox"]
-text = "Vida: --"
 theme_override_font_sizes/font_size = 20
+text = "Estado: --"
+
+[node name="HealthLabel" type="Label" parent="DebugHUD/Root/VBox" unique_id=1652865951]
+layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
-
-[node name="ChakraLabel" type="Label" parent="DebugHUD/Root/VBox"]
-text = "Chakra: --"
 theme_override_font_sizes/font_size = 20
+text = "Vida: --"
+
+[node name="ChakraLabel" type="Label" parent="DebugHUD/Root/VBox" unique_id=892992356]
+layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "Chakra: --"

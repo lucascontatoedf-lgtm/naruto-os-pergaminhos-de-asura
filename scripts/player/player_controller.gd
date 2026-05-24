@@ -50,6 +50,11 @@ const SHURIKEN_SCENE: PackedScene = preload("res://scenes/entities/shuriken.tscn
 @export var dash_cooldown: float = 0.40               ## Tempo mínimo entre dashes. Impede spam de double-tap encadeado.
 @export var dash_iframe_buffer: float = 0.05          ## Margem de i-frames APÓS o dash terminar — janela pra perdoar reação atrasada do player vs. AMBUSH do Zabuza.
 
+@export_group("Wall Jump")
+@export var wall_slide_gravity_multiplier: float = 0.15   ## Multiplicador da gravidade durante WALL_SLIDE. 0.15 = cai a 15% da velocidade normal — slide bem lento, estilo Hollow Knight. Valor anterior (0.30) ficou rápido demais no playtest.
+@export var wall_jump_velocity: Vector2 = Vector2(450, -550)  ## Impulso do wall jump. X = força lateral pra LONGE da parede (mirrorado por -_wall_normal). Y = pulo vertical (negativo = up). Override pós-_consume_jump.
+@export var wall_jump_lock_duration: float = 0.15         ## Janela após wall jump em que NÃO pode reentrar em WALL_SLIDE. Impede grudar na mesma parede instantaneamente.
+
 @export_group("Vida")
 @export var max_health: int = 5                        ## Vida total. Quando current_health chega a 0 → DEATH → respawn.
 @export var hurt_stun_duration: float = 0.4            ## Tempo travado em HURT (frames de hitstun) antes de retomar IDLE/FALL.
@@ -70,6 +75,7 @@ enum State {
 	FALL,
 	CROUCH,
 	DASH,           ## Disparado por double-tap em move_left/right. Override horizontal + i-frames + sem gravidade.
+	WALL_SLIDE,     ## Tocando parede no ar + segurando direção contra ela. Gravidade reduzida, recarga de double jump, pode lançar wall jump.
 	ATTACK,
 	SPECIAL,
 	CHAKRA_CHARGE,
@@ -122,6 +128,10 @@ var _attack_started_from_crouch: bool = false
 var _last_tap_dir: int = 0                ## -1 = esquerda, +1 = direita, 0 = nenhum (janela expirada).
 var _last_tap_window_timer: float = 0.0   ## Contagem regressiva da janela de double-tap (dash_double_tap_window).
 var _dash_cooldown_timer: float = 0.0     ## Contagem regressiva do cooldown entre dashes.
+
+# Wall Jump
+var _wall_jump_lock_timer: float = 0.0    ## Cooldown anti-reentrada em WALL_SLIDE pós-wall-jump.
+var _wall_normal: int = 0                 ## +1 = parede à DIREITA do player, -1 = parede à ESQUERDA, 0 = sem parede. Aponta PRA parede (inward).
 
 # Posição capturada em _ready; alvo do respawn quando o player cruza a kill zone.
 var _spawn_position: Vector2 = Vector2.ZERO
@@ -194,6 +204,7 @@ func _tick_timers(delta: float) -> void:
 	if _last_tap_window_timer <= 0.0:
 		_last_tap_dir = 0
 	_dash_cooldown_timer = maxf(_dash_cooldown_timer - delta, 0.0)
+	_wall_jump_lock_timer = maxf(_wall_jump_lock_timer - delta, 0.0)
 
 func _buffer_jump_input() -> void:
 	if Input.is_action_just_pressed("jump"):
@@ -303,6 +314,7 @@ func _process_current_state(delta: float) -> void:
 		State.FALL:          _state_fall(delta)
 		State.CROUCH:        _state_crouch(delta)
 		State.DASH:          _state_dash(delta)
+		State.WALL_SLIDE:    _state_wall_slide(delta)
 		State.ATTACK:        _state_attack(delta)
 		State.SPECIAL:       _state_special(delta)
 		State.CHAKRA_CHARGE: _state_chakra_charge(delta)
@@ -348,6 +360,12 @@ func _enter_state(state: State) -> void:
 			_last_tap_dir = 0
 			_last_tap_window_timer = 0.0
 			_play_animation("dash")
+		State.WALL_SLIDE:
+			# Decisão de game design: parede "recarrega" o double jump igual ao chão.
+			# Permite encadear wall_jump → air_jump pra extensão vertical (estilo Hollow Knight).
+			# Sem isso, double-jumpar antes da parede travaria o player ali sem opção de pulo.
+			_jumps_made = 0
+			_play_animation("wall_slide")
 		State.ATTACK:
 			_state_timer = light_attack_duration if _current_attack_kind == "light" else heavy_attack_duration
 			attack_started.emit(_current_attack_kind)
@@ -454,6 +472,13 @@ func _state_fall(delta: float) -> void:
 	if _try_start_dash():
 		return
 
+	# Wall slide trigger: tocando parede no ar + segurando contra ela + lock timer expirado.
+	# Detectado apenas em FALL (não em JUMP) — entrar em WALL_SLIDE durante a subida ficaria estranho.
+	# _is_holding_against_wall() atualiza _wall_normal como side effect documentado.
+	if is_on_wall_only() and _wall_jump_lock_timer <= 0.0 and _is_holding_against_wall():
+		_change_state(State.WALL_SLIDE)
+		return
+
 	# Permite jump bufferizado durante coyote time (pulo após sair de plataforma).
 	if _has_buffered_jump():
 		_change_state(State.JUMP)
@@ -478,6 +503,44 @@ func _state_dash(_delta: float) -> void:
 	if _state_timer <= 0.0:
 		# Saída: FALL se ainda no ar, senão IDLE. Velocity residual é decaída pela friction natural.
 		_change_state(State.FALL if not is_on_floor() else State.IDLE)
+
+func _state_wall_slide(delta: float) -> void:
+	## WALL_SLIDE: tocando parede no ar, gravidade reduzida, recarga de double jump.
+	## Entradas: via _state_fall quando is_on_wall_only + holding contra parede + lock timer 0.
+	## Saídas: wall jump (→ JUMP), solta direcional/perde parede (→ FALL), toca chão (→ IDLE/MOVE).
+	## HURT/DEATH interrompem normalmente via _take_damage (sem filtro de estado).
+
+	# Wall jump PRIMEIRO — antes da gravidade reduzida, pra que o pulo cancele o slide.
+	# _has_buffered_jump retorna true porque _enter_state(WALL_SLIDE) zerou _jumps_made.
+	if _has_buffered_jump():
+		_wall_jump_lock_timer = wall_jump_lock_duration
+		_change_state(State.JUMP)   # _consume_jump zera jump_buffer + _jumps_made++ + velocity.y = jump_velocity
+		# Override pós-_change_state: wall_jump_velocity é distinto do jump_velocity normal.
+		# velocity.x usa -_wall_normal pra apontar PRA LONGE da parede (away from wall).
+		velocity.x = wall_jump_velocity.x * -float(_wall_normal)
+		velocity.y = wall_jump_velocity.y
+		return
+
+	# Shuriken durante WALL_SLIDE: spawn inline COM wall_normal, permanece em WALL_SLIDE.
+	# NÃO passa por _try_start_attack — esse transicionaria pra ATTACK state.
+	if Input.is_action_just_pressed("attack_heavy") and current_chakra >= shuriken_chakra_cost:
+		_throw_shuriken_from_wall()
+
+	# Gravidade reduzida — desce devagar (efeito "deslizar pela parede").
+	velocity.y = minf(velocity.y + gravity * wall_slide_gravity_multiplier * delta, MAX_FALL_SPEED * wall_slide_gravity_multiplier)
+	# Player fica "pinado" lateralmente — sem velocity.x. Movimento horizontal só via wall jump.
+	velocity.x = 0.0
+
+	# Saída prioritária: tocou chão → IDLE/MOVE conforme input.
+	if is_on_floor():
+		_change_state(State.MOVE if absf(_get_move_input()) > 0.01 else State.IDLE)
+		return
+
+	# Saída secundária: perdeu contato com parede OU soltou direcional → FALL.
+	# _is_holding_against_wall() atualiza _wall_normal como side effect documentado.
+	if not _is_holding_against_wall():
+		_change_state(State.FALL)
+		return
 
 func _state_crouch(delta: float) -> void:
 	_apply_horizontal_movement(delta, 0.0)
@@ -590,6 +653,35 @@ func _try_start_dash() -> bool:
 	_last_tap_dir = tap_dir
 	_last_tap_window_timer = dash_double_tap_window
 	return false
+
+func _is_holding_against_wall() -> bool:
+	## Atualiza _wall_normal (SIDE EFFECT) lendo get_wall_normal() e checa se input aponta
+	## NA direção da parede ("segurar contra a parede"). Convenção do _wall_normal:
+	##   +1 = parede à DIREITA do player; -1 = parede à ESQUERDA; 0 = sem parede.
+	## (Godot retorna outward; invertemos pra inward via -signf(wall_n.x) — consistente
+	## com shuriken.gd que aplica `wall_normal * -1` pra recuperar a direção outward.)
+	if not is_on_wall_only():
+		_wall_normal = 0
+		return false
+	var wall_n: Vector2 = get_wall_normal()
+	if wall_n == Vector2.ZERO:
+		_wall_normal = 0
+		return false
+	_wall_normal = -int(signf(wall_n.x))
+	var axis: float = _get_move_input()
+	return absf(axis) > 0.01 and signf(axis) == float(_wall_normal)
+
+func _throw_shuriken_from_wall() -> void:
+	## Spawn de shuriken durante WALL_SLIDE — ignora facing (player encara parede), usa
+	## _wall_normal pra direcionar oposto. NÃO troca pra ATTACK state — player permanece
+	## em WALL_SLIDE. Spawn position é espelhado por -_wall_normal pro shuriken nascer no
+	## lado de SAÍDA (oposto à parede) em vez de "dentro" da parede.
+	spend_chakra(shuriken_chakra_cost)
+	var shuriken: Shuriken = SHURIKEN_SCENE.instantiate() as Shuriken
+	shuriken.wall_normal = _wall_normal
+	var local: Vector2 = shuriken_spawn_stand.position
+	shuriken.global_position = global_position + Vector2(local.x * -float(_wall_normal), local.y)
+	get_parent().add_child(shuriken)
 
 func _try_start_chakra_charge() -> bool:
 	if Input.is_action_pressed("chakra_charge") and is_on_floor():
