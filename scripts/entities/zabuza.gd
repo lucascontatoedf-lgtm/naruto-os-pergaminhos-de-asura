@@ -24,7 +24,7 @@ const MAX_FALL_SPEED: float = 900.0
 # stream já está em memória quando _enter_state(HIDDEN_MIST) chamar play(). Zero latência
 # vs. load() em runtime. FLAC é compressed lossless — descomprime no play, mas o decode
 # do header acontece aqui, então o primeiro play() não tem hitch.
-const LAUGH_STREAM: AudioStream = preload("res://Zabuza_laugh.wav")
+const LAUGH_STREAM: AudioStream = preload("res://assets/audio/Zabuza_laugh.wav")
 
 # ---------------------------------------------------------------------------
 # PARÂMETROS

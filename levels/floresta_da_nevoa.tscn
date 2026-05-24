@@ -1,0 +1,246 @@
+[gd_scene load_steps=9 format=3]
+
+; ============================================================================
+; Floresta da Névoa — Arena protótipo Fase 1 (Semana 2 - Level Design)
+;
+; Layout: 3000px de largura (-1500 a +1500), chão a y=400 (surface y=368).
+; Floor segmentado em LEFT + RIGHT com um PIT de 300px no meio (x=100 a 400)
+; pra testar kill_zone, double-jump, dash e AMBUSH em situação tática.
+;
+; Verticalidade progressiva (lado esquerdo, do chão até o topo):
+;   - PlatLow_A   y=284 (top=268)  — pulo simples
+;   - PlatMid_B   y=184 (top=168)  — requer double-jump
+;   - PlatHigh_C  y=104 (top=88)   — verticalidade máxima
+;
+; Lado direito (após o pit, arena do boss):
+;   - PlatMid_D   y=184 — descanso após travessia
+;   - PlatHigh_E  y=104 — vantage point sobre o boss
+;
+; Player spawn: extremo esquerdo (-1400, 200) — cai e aprende controles
+; Zabuza spawn: lado direito (1200, 368) — fora do detection_radius (500px)
+;               até Player atravessar o pit
+;
+; Estilo: Polygon2D + StaticBody2D (mesma convenção do test_stage). TileMapLayer
+; fica pra quando tivermos sprites HD (Semana 3 polish).
+; ============================================================================
+
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://scenes/entities/zabuza.tscn" id="2_zabuza"]
+[ext_resource type="Script" path="res://scripts/ui/debug_hud.gd" id="3_hud_script"]
+
+[sub_resource type="RectangleShape2D" id="floor_left_shape"]
+size = Vector2(1600, 64)
+
+[sub_resource type="RectangleShape2D" id="floor_right_shape"]
+size = Vector2(1100, 64)
+
+[sub_resource type="RectangleShape2D" id="plat_low_shape"]
+size = Vector2(240, 32)
+
+[sub_resource type="RectangleShape2D" id="plat_mid_shape"]
+size = Vector2(200, 32)
+
+[sub_resource type="RectangleShape2D" id="plat_high_shape"]
+size = Vector2(160, 32)
+
+[node name="FlorestaDaNevoa" type="Node2D"]
+
+; ----------------------------------------------------------------------------
+; AMBIENTE — Tsukuyomi tint + Lua parallax (Fase 1 placeholders)
+;
+; CanvasModulate: multiplica a cor de TODOS os CanvasItem filhos pelo tom rosa-roxo.
+; Tudo no nível (chão, plataformas, troncos, player, zabuza, fog) ganha esse filtro
+; sem custo de render — é o jeito canônico de fazer "atmosfera global" em 2D no Godot.
+; Nome explícito ($CanvasModulate) pra futuro level script poder fazer:
+;   var tw := create_tween(); tw.tween_property($CanvasModulate, "color", Color(...), 1.0)
+; durante transição pra BOSS_BATTLE state — gancho preparado, sem código agora.
+;
+; ParallaxBackground: Lua placeholder (Polygon2D circular 12-gon) com halo sutil.
+; motion_scale = (0, 0) → Lua FIXA no viewport, sempre visível upper-right.
+; Padrão de jogos com céu noturno (Hollow Knight, Celeste) — "a Lua sempre te observa"
+; combina com o conceito de Tsukuyomi.
+;
+; ATENÇÃO COORDENADAS: ParallaxLayer com motion_scale=(0,0) usa CanvasLayer space:
+;   - origem (0,0) = canto SUPERIOR ESQUERDO do viewport
+;   - Y CRESCE PRA BAIXO (positivo = mais abaixo, negativo = ACIMA da tela)
+;   - Coords em PIXELS do viewport (não world space)
+; Position (900, 150) calibrada pra viewport default 1152x648:
+;   - x=900: 252px da borda direita (margem segura, halo raio 140 cabe)
+;   - y=150: 150px abaixo do topo (halo extends y=10 a y=290, todo visível)
+; Substituir por Sprite2D real quando tivermos arte da Lua/Sharingan.
+; ----------------------------------------------------------------------------
+[node name="CanvasModulate" type="CanvasModulate" parent="."]
+color = Color(0.85, 0.65, 0.75, 1)
+
+[node name="ParallaxBackground" type="ParallaxBackground" parent="."]
+
+[node name="MoonLayer" type="ParallaxLayer" parent="ParallaxBackground"]
+motion_scale = Vector2(0, 0)
+
+[node name="MoonHalo" type="Polygon2D" parent="ParallaxBackground/MoonLayer"]
+position = Vector2(900, 150)
+polygon = PackedVector2Array(140, 0, 121, 70, 70, 121, 0, 140, -70, 121, -121, 70, -140, 0, -121, -70, -70, -121, 0, -140, 70, -121, 121, -70)
+color = Color(0.85, 0.4, 0.3, 0.22)
+z_index = -2
+
+[node name="Moon" type="Polygon2D" parent="ParallaxBackground/MoonLayer"]
+position = Vector2(900, 150)
+polygon = PackedVector2Array(100, 0, 87, 50, 50, 87, 0, 100, -50, 87, -87, 50, -100, 0, -87, -50, -50, -87, 0, -100, 50, -87, 87, -50)
+color = Color(0.95, 0.6, 0.5, 1)
+z_index = -1
+
+; ----------------------------------------------------------------------------
+; CHÃO — segmentado pra criar pit de 300px no meio (x=100 a x=400)
+; ----------------------------------------------------------------------------
+[node name="FloorLeft" type="StaticBody2D" parent="."]
+position = Vector2(-700, 400)
+
+[node name="Visual" type="Polygon2D" parent="FloorLeft"]
+polygon = PackedVector2Array(-800, -32, 800, -32, 800, 32, -800, 32)
+color = Color(0.18, 0.22, 0.16, 1)
+
+[node name="Collision" type="CollisionShape2D" parent="FloorLeft"]
+shape = SubResource("floor_left_shape")
+
+[node name="FloorRight" type="StaticBody2D" parent="."]
+position = Vector2(950, 400)
+
+[node name="Visual" type="Polygon2D" parent="FloorRight"]
+polygon = PackedVector2Array(-550, -32, 550, -32, 550, 32, -550, 32)
+color = Color(0.18, 0.22, 0.16, 1)
+
+[node name="Collision" type="CollisionShape2D" parent="FloorRight"]
+shape = SubResource("floor_right_shape")
+
+; ----------------------------------------------------------------------------
+; PLATAFORMAS LADO ESQUERDO — verticalidade progressiva
+; ----------------------------------------------------------------------------
+[node name="PlatLow_A" type="StaticBody2D" parent="."]
+position = Vector2(-1000, 284)
+
+[node name="Visual" type="Polygon2D" parent="PlatLow_A"]
+polygon = PackedVector2Array(-120, -16, 120, -16, 120, 16, -120, 16)
+color = Color(0.28, 0.32, 0.20, 1)
+
+[node name="Collision" type="CollisionShape2D" parent="PlatLow_A"]
+shape = SubResource("plat_low_shape")
+
+[node name="PlatMid_B" type="StaticBody2D" parent="."]
+position = Vector2(-700, 184)
+
+[node name="Visual" type="Polygon2D" parent="PlatMid_B"]
+polygon = PackedVector2Array(-100, -16, 100, -16, 100, 16, -100, 16)
+color = Color(0.28, 0.32, 0.20, 1)
+
+[node name="Collision" type="CollisionShape2D" parent="PlatMid_B"]
+shape = SubResource("plat_mid_shape")
+
+[node name="PlatHigh_C" type="StaticBody2D" parent="."]
+position = Vector2(-400, 104)
+
+[node name="Visual" type="Polygon2D" parent="PlatHigh_C"]
+polygon = PackedVector2Array(-80, -16, 80, -16, 80, 16, -80, 16)
+color = Color(0.28, 0.32, 0.20, 1)
+
+[node name="Collision" type="CollisionShape2D" parent="PlatHigh_C"]
+shape = SubResource("plat_high_shape")
+
+; ----------------------------------------------------------------------------
+; ZONA DA BATALHA FINAL — Copa das Árvores (x=+500 a +1500) sob o Tsukuyomi
+;
+; BossFog: névoa atmosférica densa cobrindo a região do boss. Semi-transparente
+; (alpha 0.22), z_index=-1 = BACKGROUND atmosférico (não obscurece player/zabuza).
+; Se quiser fog FOREGROUND (mais opressor, obscurece player), suba z_index pra +2
+; no inspector — é tuning de game feel, não bug.
+;
+; Plataformas PlatMid_D e PlatHigh_E NÃO são mais "tijolos verdes flutuantes" —
+; agora são troncos da copa das árvores: cor marrom escura + Trunk Polygon2D
+; descendo até abaixo do chão (atravessa floor cosmeticamente, não tem colisão).
+; ----------------------------------------------------------------------------
+[node name="BossFog" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(500, -500, 1500, -500, 1500, 500, 500, 500)
+color = Color(0.4, 0.15, 0.25, 0.22)
+z_index = -1
+
+[node name="PlatMid_D" type="StaticBody2D" parent="."]
+position = Vector2(500, 184)
+
+[node name="Visual" type="Polygon2D" parent="PlatMid_D"]
+polygon = PackedVector2Array(-100, -16, 100, -16, 100, 16, -100, 16)
+color = Color(0.32, 0.18, 0.10, 1)
+
+[node name="Trunk" type="Polygon2D" parent="PlatMid_D"]
+polygon = PackedVector2Array(-30, 16, 30, 16, 22, 480, -22, 480)
+color = Color(0.18, 0.10, 0.05, 1)
+z_index = -1
+
+[node name="Collision" type="CollisionShape2D" parent="PlatMid_D"]
+shape = SubResource("plat_mid_shape")
+
+[node name="PlatHigh_E" type="StaticBody2D" parent="."]
+position = Vector2(800, 104)
+
+[node name="Visual" type="Polygon2D" parent="PlatHigh_E"]
+polygon = PackedVector2Array(-80, -16, 80, -16, 80, 16, -80, 16)
+color = Color(0.32, 0.18, 0.10, 1)
+
+[node name="Trunk" type="Polygon2D" parent="PlatHigh_E"]
+polygon = PackedVector2Array(-26, 16, 26, 16, 18, 560, -18, 560)
+color = Color(0.18, 0.10, 0.05, 1)
+z_index = -1
+
+[node name="Collision" type="CollisionShape2D" parent="PlatHigh_E"]
+shape = SubResource("plat_high_shape")
+
+; ----------------------------------------------------------------------------
+; ENTIDADES — Player e Boss
+; ----------------------------------------------------------------------------
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(-1400, 200)
+
+[node name="Zabuza" parent="." instance=ExtResource("2_zabuza")]
+position = Vector2(1200, 368)
+
+; ----------------------------------------------------------------------------
+; DEBUG HUD — mesmo layout do test_stage pra consistência de telemetria
+; ----------------------------------------------------------------------------
+[node name="DebugHUD" type="CanvasLayer" parent="."]
+script = ExtResource("3_hud_script")
+
+[node name="Root" type="Control" parent="DebugHUD"]
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 320.0
+offset_bottom = 122.0
+mouse_filter = 2
+
+[node name="Background" type="ColorRect" parent="DebugHUD/Root"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.04, 0.04, 0.08, 0.72)
+mouse_filter = 2
+
+[node name="VBox" type="VBoxContainer" parent="DebugHUD/Root"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = 10.0
+offset_right = -14.0
+offset_bottom = -10.0
+theme_override_constants/separation = 6
+mouse_filter = 2
+
+[node name="StateLabel" type="Label" parent="DebugHUD/Root/VBox"]
+text = "Estado: --"
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(1, 0.95, 0.7, 1)
+
+[node name="HealthLabel" type="Label" parent="DebugHUD/Root/VBox"]
+text = "Vida: --"
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
+
+[node name="ChakraLabel" type="Label" parent="DebugHUD/Root/VBox"]
+text = "Chakra: --"
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.55, 0.85, 1, 1)
