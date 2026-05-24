@@ -1,0 +1,64 @@
+[gd_scene load_steps=8 format=3]
+
+; ============================================================================
+; Ichiraku — cutscene do Ramen (Zona 4, easter egg SUGESTOES.md #03)
+;
+; ESTRUTURA:
+;   Ichiraku (Node2D) — script: ichiraku.gd
+;   ├── UILayer (CanvasLayer)
+;   │   └── Background (TextureRect, anchor full_rect, KEEP_ASPECT_COVERED)
+;   └── AnimationPlayer — loop_teuchi (8s, alternância de 3 PNGs)
+;
+; OBS: spec original pedia TextureRect direto em Node2D, mas TextureRect (Control)
+; em Node2D usa coords de mundo. UILayer (CanvasLayer) é necessário pro background
+; renderizar full-screen independente de camera/player. Adição mínima justificada.
+;
+; ANIMAÇÃO:
+;   t=0: teuchi1, t=2: teuchi2, t=4: teuchi3, t=6: teuchi2, t=8: teuchi1
+;   loop_mode = LOOP_LINEAR, INTERP_NEAREST + UPDATE_DISCRETE (swap discreto)
+; ============================================================================
+
+[ext_resource type="Script" path="res://scripts/cutscenes/ichiraku.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/backgrounds/ichiraku/teuchi_naruto_jiraya1.png" id="2_teuchi1"]
+[ext_resource type="Texture2D" path="res://assets/backgrounds/ichiraku/teuchi_naruto_jiraya2.png" id="3_teuchi2"]
+[ext_resource type="Texture2D" path="res://assets/backgrounds/ichiraku/teuchi_naruto_jiraya3.png" id="4_teuchi3"]
+
+[sub_resource type="Animation" id="anim_loop_teuchi"]
+resource_name = "loop_teuchi"
+length = 8.0
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("UILayer/Background:texture")
+tracks/0/interp = 0
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 2, 4, 6, 8),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 1,
+"values": [ExtResource("2_teuchi1"), ExtResource("3_teuchi2"), ExtResource("4_teuchi3"), ExtResource("3_teuchi2"), ExtResource("2_teuchi1")]
+}
+
+[sub_resource type="AnimationLibrary" id="anim_lib"]
+_data = {
+"loop_teuchi": SubResource("anim_loop_teuchi")
+}
+
+[node name="Ichiraku" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+
+[node name="Background" type="TextureRect" parent="UILayer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource("2_teuchi1")
+expand_mode = 1
+stretch_mode = 6
+mouse_filter = 2
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("anim_lib")
+}
