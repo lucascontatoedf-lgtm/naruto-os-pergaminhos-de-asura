@@ -1,8 +1,9 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/player/player_controller.gd" id="1_script"]
 [ext_resource type="Script" path="res://scripts/components/hitbox.gd" id="2_hitbox"]
 [ext_resource type="Script" path="res://scripts/components/hurtbox.gd" id="3_hurtbox"]
+[ext_resource type="PackedScene" path="res://scenes/components/rasengan_balloon.tscn" id="4_balloon"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(48, 96)
@@ -76,3 +77,6 @@ script = ExtResource("3_hurtbox")
 [node name="HurtboxShape" type="CollisionShape2D" parent="Hurtbox"]
 position = Vector2(0, -48)
 shape = SubResource("player_hurtbox_shape")
+
+[node name="RasengaBalloon" parent="." instance=ExtResource("4_balloon")]
+position = Vector2(0, -130)

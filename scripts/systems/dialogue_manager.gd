@@ -34,7 +34,7 @@ const DIALOGUES: Dictionary = {
 	"jiraiya_intro": [
 		{"speaker": "Jiraiya", "text": "Yo, Naruto! Antes de sair quebrando tudo, aprende a se mover direito!"},
 		{"speaker": "Naruto", "text": "Heh! Eu já sei fazer isso, sábio tarado!"},
-		{"speaker": "Jiraiya", "text": "Então prova. Usa W A S D pra se mover. Tô certo?"},
+		{"speaker": "Jiraiya", "text": "Então prova. Usa W, A, S, D pra se mover."},
 		{"speaker": "Naruto", "text": "Fácil! Tô voando aqui!"},
 		{"speaker": "Jiraiya", "text": "Agora tenta alcançar aquela plataforma alta. Aperta W duas vezes pra dar um Double Jump!"},
 		{"speaker": "Naruto", "text": "WOAH! Isso foi irado!! Tô certo!"},
@@ -46,7 +46,7 @@ const DIALOGUES: Dictionary = {
 		{"speaker": "Naruto", "text": "WHOOSH!! Cara… isso é MUITO rápido!"},
 		{"speaker": "Jiraiya", "text": "Caiu na parede? Não entra em pânico. Segura na direção dela e você vai deslizar lentamente."},
 		{"speaker": "Naruto", "text": "OHHH! Igual ninja de verdade!"},
-		{"speaker": "Jiraiya", "text": "E você ainda pode lançar shurikens enquanto escorrega. Tô certo?"},
+		{"speaker": "Jiraiya", "text": "E você ainda pode lançar shurikens enquanto escorrega."},
 		{"speaker": "Naruto", "text": "Isso ficou estiloso demais!"},
 		{"speaker": "Jiraiya", "text": "Chakra baixo já? Sabia… Senta e segura Shift Esquerdo pra meditar e recuperar chakra."},
 		{"speaker": "Naruto", "text": "Hmmm… calma… foco… …Ei! Meu chakra voltou! Tô certo!"},
@@ -182,11 +182,3 @@ func _trigger_kamui() -> void:
 	end_dialogue()
 	kamui_triggered.emit()
 
-## Balão visual do Rasengan — NÃO pausa o jogo, some em 1.5s. Pode ser chamado
-## de player_controller.gd quando special é castado (integração futura — spec
-## proíbe modificar arquivos existentes nesta sessão).
-func show_rasengan_balloon() -> void:
-	if _dialogue_box == null or not is_instance_valid(_dialogue_box):
-		_dialogue_box = DialogueBoxScene.instantiate()
-		get_tree().root.add_child(_dialogue_box)
-	_dialogue_box.show_rasengan_balloon()

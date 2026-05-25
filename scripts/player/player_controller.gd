@@ -378,6 +378,7 @@ func _enter_state(state: State) -> void:
 			special_started.emit()
 			_enable_attack_hitbox("special")
 			_play_animation("rasengan")
+			$RasengaBalloon.show_balloon()
 		State.CHAKRA_CHARGE:
 			velocity.x = 0.0
 			_play_animation("chakra_charge")

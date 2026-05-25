@@ -1,0 +1,46 @@
+[gd_scene load_steps=3 format=3]
+
+; ============================================================================
+; RasengaBalloon — balão "RASENGAAAAAN!!!" world-space, filho do Player.
+;
+; Posicionado em Vector2(0, -130) relativo ao Player (acima da cabeça).
+; Panel branco com borda preta, texto preto centrado. Aparece por 1.5s ao
+; castar Rasengan (chamado de player_controller.gd:_enter_state(SPECIAL)).
+;
+; Independente do DialogueSystem — antes era parte do DialogueBox, refatorado
+; pra component próprio pra ser world-space (segue camera/player) em vez de
+; screen-space (UI fixa).
+; ============================================================================
+
+[ext_resource type="Script" path="res://scripts/components/rasengan_balloon.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="balloon_stylebox"]
+bg_color = Color(1, 1, 1, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0, 0, 0, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="RasengaBalloon" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="Panel" type="Panel" parent="."]
+offset_left = -110.0
+offset_top = -35.0
+offset_right = 110.0
+offset_bottom = 35.0
+theme_override_styles/panel = SubResource("balloon_stylebox")
+
+[node name="Label" type="Label" parent="Panel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+text = "RASENGAAAAAN!!!"
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+horizontal_alignment = 1
+vertical_alignment = 1
