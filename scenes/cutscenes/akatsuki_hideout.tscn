@@ -1,21 +1,23 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=3 format=3]
 
 ; ============================================================================
 ; AkatsukiHideout — cutscene do esconderijo (Zona 2, easter egg SUGESTOES.md #05)
 ;
 ; ESTRUTURA:
 ;   AkatsukiHideout (Node2D) — script: akatsuki_hideout.gd
-;   ├── UILayer (CanvasLayer)
-;   │   └── Background (TextureRect, anchor full_rect, KEEP_ASPECT_COVERED)
-;   └── AnimationPlayer — loop_gedo (8s, alternância de 3 PNGs)
+;   └── UILayer (CanvasLayer)
+;       └── Background (TextureRect, anchor full_rect, KEEP_ASPECT_COVERED)
 ;
-; OBS: spec original pedia TextureRect direto em Node2D, mas TextureRect (Control)
-; em Node2D usa coords de mundo. UILayer (CanvasLayer) é necessário pro background
-; renderizar full-screen independente de camera/player. Adição mínima justificada.
+; OBS: TextureRect (Control) em Node2D usa coords de mundo. UILayer (CanvasLayer)
+; é necessário pro background renderizar full-screen independente de camera/player.
 ;
-; ANIMAÇÃO:
-;   t=0: gedo1, t=2: gedo2, t=4: gedo3, t=6: gedo2, t=8: gedo1
-;   loop_mode = LOOP_LINEAR, INTERP_NEAREST + UPDATE_DISCRETE (swap discreto)
+; SWAP DE FRAMES — controle DIRETO pelo script (sem AnimationPlayer):
+;   - Cena abre com gedo2 (Pain mão na cabeça) — setado aqui no .tscn
+;   - akatsuki_hideout.gd escuta DialogueManager.line_advanced(index)
+;   - Ao chegar na linha índice 2 ("Pain: Inesperado.") troca pra gedo3 (Pain sentado)
+;   - Permanece estático até fim do diálogo
+;
+; gedo3 NÃO está como ext_resource aqui — script faz preload() direto.
 ;
 ; INTEGRAÇÃO FUTURA: KamuiTrigger (já existe em scripts/components/) deve ser
 ; instanciado como filho desta cena pra ouvir DialogueManager.kamui_triggered
@@ -23,31 +25,7 @@
 ; ============================================================================
 
 [ext_resource type="Script" path="res://scripts/cutscenes/akatsuki_hideout.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://assets/backgrounds/akatsuki/guedomazo_pain_konan_tobi_naruto1.png" id="2_gedo1"]
-[ext_resource type="Texture2D" path="res://assets/backgrounds/akatsuki/guedomazo_pain_konan_tobi_naruto2.png" id="3_gedo2"]
-[ext_resource type="Texture2D" path="res://assets/backgrounds/akatsuki/guedomazo_pain_konan_tobi_naruto3.png" id="4_gedo3"]
-
-[sub_resource type="Animation" id="anim_loop_gedo"]
-resource_name = "loop_gedo"
-length = 8.0
-loop_mode = 1
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("UILayer/Background:texture")
-tracks/0/interp = 0
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0, 2, 4, 6, 8),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
-"update": 1,
-"values": [ExtResource("2_gedo1"), ExtResource("3_gedo2"), ExtResource("4_gedo3"), ExtResource("3_gedo2"), ExtResource("2_gedo1")]
-}
-
-[sub_resource type="AnimationLibrary" id="anim_lib"]
-_data = {
-"loop_gedo": SubResource("anim_loop_gedo")
-}
+[ext_resource type="Texture2D" path="res://assets/backgrounds/akatsuki/guedomazo_pain_konan_tobi_naruto2.png" id="2_gedo2"]
 
 [node name="AkatsukiHideout" type="Node2D"]
 script = ExtResource("1_script")
@@ -57,12 +35,7 @@ script = ExtResource("1_script")
 [node name="Background" type="TextureRect" parent="UILayer"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-texture = ExtResource("2_gedo1")
+texture = ExtResource("2_gedo2")
 expand_mode = 1
 stretch_mode = 6
 mouse_filter = 2
-
-[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
-libraries = {
-"": SubResource("anim_lib")
-}

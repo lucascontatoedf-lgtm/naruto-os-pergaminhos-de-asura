@@ -25,6 +25,7 @@ const DialogueBoxScene: PackedScene = preload("res://scenes/ui/dialogue_box.tscn
 signal dialogue_started(id: String)
 signal dialogue_ended(id: String)
 signal kamui_triggered
+signal line_advanced(index: int)   ## Emitido em advance() ANTES de show_line(). Permite cutscenes/scripts reagirem a índices específicos (ex: trocar background ao chegar em "Pain: Inesperado.").
 
 ## Catálogo central de diálogos. Chave = id logical, valor = Array[Dictionary]
 ## com {speaker: String, text: String} por linha. Speaker vazio ("") = linha
@@ -159,6 +160,7 @@ func advance() -> void:
 		else:
 			end_dialogue()
 		return
+	line_advanced.emit(_current_index)
 	_dialogue_box.show_line(_current_lines[_current_index])
 
 ## Encerra o diálogo atual. Despausa o jogo, esconde balão, emit signal.

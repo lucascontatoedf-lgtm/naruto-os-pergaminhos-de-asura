@@ -1,16 +1,23 @@
 extends Node2D
 
-## AkatsukiHideout — cutscene do esconderijo (Zona 2, easter egg SUGESTOES.md #05).
+## Akatsuki Hideout — cutscene do esconderijo (easter egg SUGESTOES.md #05).
 ##
-## Função única: tocar a animação loop_gedo (alternância de 3 backgrounds com
-## Gedo Mazo + Pain + Konan + Tobi, ~8s de loop). DialogueManager.start_dialogue(
-## "akatsuki_encontro") deve ser chamado por trigger filho ou pelo LevelManager.
-##
-## Após "akatsuki_encontro" terminar, KamuiTrigger ouve o signal kamui_triggered
-## do DialogueManager e executa fade+teleporte+akatsuki_saida (cadeia já cabreada
-## no kamui_trigger.gd — instanciar como filho desta cena quando integrar).
-##
-## Sem lógica de gameplay — só cutscene visual + ganchos pra diálogo.
+## Troca de textura acionada pelo diálogo:
+## - Abre com frame_a (Pain mão na cabeça)
+## - Após Pain: "Inesperado." → troca para frame_b (Pain sentado)
+## - Permanece estático até fim do diálogo
+
+const FRAME_A = preload("res://assets/backgrounds/akatsuki/guedomazo_pain_konan_tobi_naruto2.png")
+const FRAME_B = preload("res://assets/backgrounds/akatsuki/guedomazo_pain_konan_tobi_naruto3.png")
+
+const TRIGGER_LINE_INDEX = 2  # índice da linha "Pain: Inesperado." no diálogo
+
+@onready var background: TextureRect = $UILayer/Background
 
 func _ready() -> void:
-	$AnimationPlayer.play("loop_gedo")
+	background.texture = FRAME_A
+	DialogueManager.line_advanced.connect(_on_line_advanced)
+
+func _on_line_advanced(index: int) -> void:
+	if index == TRIGGER_LINE_INDEX:
+		background.texture = FRAME_B
