@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=10 format=3]
 
 ; ============================================================================
 ; Ichiraku — cutscene do Ramen (Zona 4, easter egg SUGESTOES.md #03)
@@ -22,6 +22,7 @@
 [ext_resource type="Texture2D" path="res://assets/backgrounds/ichiraku/teuchi_naruto_jiraya1.png" id="2_teuchi1"]
 [ext_resource type="Texture2D" path="res://assets/backgrounds/ichiraku/teuchi_naruto_jiraya2.png" id="3_teuchi2"]
 [ext_resource type="Texture2D" path="res://assets/backgrounds/ichiraku/teuchi_naruto_jiraya3.png" id="4_teuchi3"]
+[ext_resource type="Script" path="res://scripts/components/dialogue_trigger.gd" id="5_trigger"]
 
 [sub_resource type="Animation" id="anim_loop_teuchi"]
 resource_name = "loop_teuchi"
@@ -45,6 +46,9 @@ _data = {
 "loop_teuchi": SubResource("anim_loop_teuchi")
 }
 
+[sub_resource type="RectangleShape2D" id="trigger_shape"]
+size = Vector2(1152, 648)
+
 [node name="Ichiraku" type="Node2D"]
 script = ExtResource("1_script")
 
@@ -62,3 +66,14 @@ mouse_filter = 2
 libraries = {
 "": SubResource("anim_lib")
 }
+
+[node name="DialogueTrigger" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 128
+script = ExtResource("5_trigger")
+mode = "AUTO"
+dialogue_id = "ichiraku_encontro"
+one_shot = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DialogueTrigger"]
+shape = SubResource("trigger_shape")
