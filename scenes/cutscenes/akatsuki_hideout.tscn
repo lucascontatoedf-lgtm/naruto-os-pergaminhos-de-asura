@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=6 format=3]
 
 ; ============================================================================
 ; AkatsukiHideout — cutscene do esconderijo (Zona 2, easter egg SUGESTOES.md #05)
@@ -26,6 +26,11 @@
 
 [ext_resource type="Script" path="res://scripts/cutscenes/akatsuki_hideout.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://assets/backgrounds/akatsuki/guedomazo_pain_konan_tobi_naruto2.png" id="2_gedo2"]
+[ext_resource type="PackedScene" path="res://scenes/components/dialogue_trigger.tscn" id="3_dialogue_trigger"]
+[ext_resource type="Script" path="res://scripts/components/kamui_trigger.gd" id="4_kamui_script"]
+
+[sub_resource type="RectangleShape2D" id="akatsuki_trigger_shape"]
+size = Vector2(1152, 648)
 
 [node name="AkatsukiHideout" type="Node2D"]
 script = ExtResource("1_script")
@@ -39,3 +44,15 @@ texture = ExtResource("2_gedo2")
 expand_mode = 1
 stretch_mode = 6
 mouse_filter = 2
+
+[node name="DialogueTrigger" parent="." instance=ExtResource("3_dialogue_trigger")]
+mode = "AUTO"
+dialogue_id = "akatsuki_encontro"
+one_shot = true
+
+[node name="CollisionShape2D" parent="DialogueTrigger"]
+shape = SubResource("akatsuki_trigger_shape")
+
+[node name="KamuiTrigger" type="Node" parent="."]
+script = ExtResource("4_kamui_script")
+exit_position = Vector2(500, 0)

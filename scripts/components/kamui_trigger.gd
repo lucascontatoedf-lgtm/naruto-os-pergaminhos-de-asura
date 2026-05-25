@@ -24,6 +24,10 @@ var _fade_layer: CanvasLayer
 var _fade_rect: ColorRect
 
 func _ready() -> void:
+	if player == null:
+		var players = get_tree().get_nodes_in_group("Player")
+		if players.size() > 0:
+			player = players[0]
 	DialogueManager.kamui_triggered.connect(_on_kamui_triggered)
 	_setup_fade_layer()
 

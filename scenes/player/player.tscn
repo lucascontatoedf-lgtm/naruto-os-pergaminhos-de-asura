@@ -17,7 +17,7 @@ size = Vector2(90, 90)
 [sub_resource type="RectangleShape2D" id="player_hurtbox_shape"]
 size = Vector2(52, 100)
 
-[node name="Player" type="CharacterBody2D"]
+[node name="Player" type="CharacterBody2D" groups=["Player"]]
 collision_layer = 128
 collision_mask = 1
 script = ExtResource("1_script")
