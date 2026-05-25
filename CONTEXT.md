@@ -10,6 +10,12 @@
 
 ---
 
+## Regra permanente — zero commits sem teste
+**Fluxo obrigatório:** coworker implementa → usuário testa no Godot Editor → traz feedback → aprovado → commit.
+Nunca commitar antes da confirmação do usuário.
+
+---
+
 ## Stack
 - GDScript, 2D platformer, uso pessoal (máquina única, sem distribuição)
 - Input: Teclado (WASD/Setas + J/K/O/Shift) — sem suporte a controle
@@ -62,8 +68,8 @@
 | DialogueSystem | dialogue_manager.gd + dialogue_box.gd | ✅ autoload + UI manga-style + signal line_advanced |
 | DialogueTrigger | dialogue_trigger.gd | ✅ Area2D, modos AUTO e INTERACTION |
 | RasengaBalloon | rasengan_balloon.gd | ✅ world-space, filho do Player, await 1.5s |
-| CutsceneSystem | ichiraku.gd, akatsuki_hideout.gd | ✅ scenes prontas (aguarda DialogueTrigger filho) |
-| KamuiTrigger | kamui_trigger.gd | ✅ implementado, dormente (aguarda cena Akatsuki integrar) |
+| CutsceneSystem | ichiraku.gd, akatsuki_hideout.gd | ✅ integrados com DialogueTrigger + KamuiTrigger |
+| KamuiTrigger | kamui_trigger.gd | ✅ ativo em akatsuki_hideout, player via grupo, fallback get_nodes_in_group |
 | CollectibleSystem | — | ❌ pendente |
 | SaveSystem | — | ❌ pendente |
 
@@ -86,6 +92,8 @@
 - RasengaBalloon é world-space (filho do Player), não UI screen-space — segue camera
 - Cutscenes reagem a `DialogueManager.line_advanced(index)` pra trocar texturas (padrão Akatsuki frame swap)
 - Akatsuki cutscene: abre com frame_a (Pain mão na cabeça), troca para frame_b na linha 2 ("Pain: Inesperado.")
+- Ichiraku é sub-scene da Zona 4 (não `change_scene_to_file`) — Player permanece na árvore
+- `exit_position` do KamuiTrigger = `Vector2(500, 0)` placeholder — ajustar quando Zona 2 for construída
 
 ---
 
@@ -100,7 +108,13 @@
 
 ---
 
-## Commits desta sessão (Bloco 3 + refinamentos)
+## Commits desta sessão (Sessão 5)
+| SHA | Descrição |
+|---|---|
+| 933aea0 | Feat: ichiraku.tscn — DialogueTrigger AUTO ichiraku_encontro |
+| 6530e3a | Feat: Bloco 3 completo — player grupo Player, KamuiTrigger fallback, akatsuki_hideout integrado |
+
+## Commits anteriores (Bloco 3 + refinamentos)
 | SHA | Descrição |
 |---|---|
 | 2327c33 | Docs: PROMPT.md — instrução de sessão para o Tech Lead |
@@ -114,16 +128,17 @@
 ---
 
 ## Pendências de integração (não-bloqueantes)
-- `ichiraku.tscn` precisa de DialogueTrigger filho com `dialogue_id="ichiraku_encontro"`
-- `akatsuki_hideout.tscn` precisa de DialogueTrigger + KamuiTrigger instanciados (exit_position, entrance_collider, player no inspector)
+- `ichiraku.tscn` — DialogueTrigger para `ichiraku_saida` (encontro ✅, saida pendente)
 - `assets/sprites/Naruto_chakra_charge.png` aguarda integração no Player (sem AnimatedSprite2D/Sprite2D ainda)
 - Renomear `floresta_da_nevoa.tscn` → `zona_5_lago.tscn` quando definir a Zona 5 final
+- Warning: signal `respawned` declarado em `player_controller.gd` mas nunca conectado (cleanup futura, não-bloqueante)
+- `exit_position` do KamuiTrigger (`Vector2(500, 0)`) é placeholder — revisar quando Zona 2 for construída
 
 ---
 
 ## Próximo bloco
 A definir. Opções na mesa:
-- **Integração das cutscenes**: cabear DialogueTrigger + KamuiTrigger nas cenas Ichiraku/Akatsuki
+- **ichiraku_saida**: DialogueTrigger para o diálogo de saída do Ichiraku
 - **SaveSystem**: autoload pra persistir HP/chakra/pergaminhos cross-zona
 - **CollectibleSystem**: pergaminhos coletáveis (#02 Espadas, #03 Ramen, #04 Cobra, #05 Akatsuki, #06 Jiraiya — ver SUGESTOES.md)
 - **Chakra charge sprite**: integrar Naruto_chakra_charge.png ao Player (precisa AnimatedSprite2D ou TextureRect)
