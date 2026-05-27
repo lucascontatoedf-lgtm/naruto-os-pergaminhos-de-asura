@@ -13,6 +13,8 @@ extends Node2D
 var _fade: FadeTransition
 
 func _ready() -> void:
+	$UILayer/Background.size = Vector2(1900, 900)
+	$UILayer/Background.position = Vector2(-24, -80)
 	$AnimationPlayer.play("loop_teuchi")
 	DialogueManager.dialogue_ended.connect(_on_dialogue_ended)
 	_fade = preload("res://scenes/components/fade_transition.tscn").instantiate()

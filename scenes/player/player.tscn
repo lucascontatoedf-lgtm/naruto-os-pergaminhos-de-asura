@@ -1,9 +1,10 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/player/player_controller.gd" id="1_script"]
 [ext_resource type="Script" path="res://scripts/components/hitbox.gd" id="2_hitbox"]
 [ext_resource type="Script" path="res://scripts/components/hurtbox.gd" id="3_hurtbox"]
 [ext_resource type="PackedScene" path="res://scenes/components/rasengan_balloon.tscn" id="4_balloon"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Naruto_chakra_charge.png" id="5_chakra"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(48, 96)
@@ -29,6 +30,14 @@ color = Color(1, 0.65, 0.15, 1)
 [node name="FaceMarker" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(8, -80, 20, -72, 8, -64)
 color = Color(0.1, 0.1, 0.1, 1)
+
+[node name="ChakraSprite" type="Sprite2D" parent="."]
+texture = ExtResource("5_chakra")
+position = Vector2(0, -52.8)
+scale = Vector2(0.4, 0.4)
+region_enabled = true
+region_rect = Rect2(207, 17, 206, 264)
+visible = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -48)

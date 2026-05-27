@@ -147,6 +147,8 @@ var _hitbox_by_kind: Dictionary = {}
 @onready var hurtbox: Hurtbox = $Hurtbox
 @onready var shuriken_spawn_stand: Marker2D = $ShurikenSpawnStand     ## Origem da shuriken em pé (altura do peito/ombro).
 @onready var shuriken_spawn_crouch: Marker2D = $ShurikenSpawnCrouch   ## Origem da shuriken agachado (altura do joelho/cintura).
+@onready var _visual: Polygon2D = $Visual
+@onready var _chakra_sprite: Sprite2D = $ChakraSprite
 # @onready var animation_player: AnimationPlayer = $AnimationPlayer
 # Heavy não tem mais Area2D no Player — virou projétil (Shuriken) instanciado em _throw_shuriken().
 
@@ -382,6 +384,8 @@ func _enter_state(state: State) -> void:
 		State.CHAKRA_CHARGE:
 			velocity.x = 0.0
 			_play_animation("chakra_charge")
+			_visual.visible = false
+			_chakra_sprite.visible = true
 		State.HURT:
 			_state_timer = hurt_stun_duration
 			_invulnerability_timer = invulnerability_duration
@@ -414,6 +418,9 @@ func _exit_state(state: State) -> void:
 			# do _state_idle/move decai de 320 → 0 em poucos frames.
 			velocity.x = clampf(velocity.x, -move_speed, move_speed)
 			special_ended.emit()
+		State.CHAKRA_CHARGE:
+			_visual.visible = true
+			_chakra_sprite.visible = false
 
 # ===========================================================================
 # ESTADOS INDIVIDUAIS
