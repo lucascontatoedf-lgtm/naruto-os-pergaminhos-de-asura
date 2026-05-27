@@ -68,8 +68,9 @@ Nunca commitar antes da confirmação do usuário.
 | DialogueSystem | dialogue_manager.gd + dialogue_box.gd | ✅ autoload + UI manga-style + signal line_advanced |
 | DialogueTrigger | dialogue_trigger.gd | ✅ Area2D, modos AUTO e INTERACTION |
 | RasengaBalloon | rasengan_balloon.gd | ✅ world-space, filho do Player, await 1.5s |
-| CutsceneSystem | ichiraku.gd, akatsuki_hideout.gd | ✅ integrados com DialogueTrigger + KamuiTrigger |
+| CutsceneSystem | ichiraku.gd, akatsuki_hideout.gd | ✅ Ichiraku 100% integrado e testado (encontro + saída + fade); akatsuki integrado |
 | KamuiTrigger | kamui_trigger.gd | ✅ ativo em akatsuki_hideout, player via grupo, fallback get_nodes_in_group |
+| FadeTransition | fade_transition.gd | ✅ componente genérico, `fade(callback)` + signal `fade_completed`, duration=0.5s default |
 | CollectibleSystem | — | ❌ pendente |
 | SaveSystem | — | ❌ pendente |
 
@@ -113,6 +114,8 @@ Nunca commitar antes da confirmação do usuário.
 |---|---|
 | 933aea0 | Feat: ichiraku.tscn — DialogueTrigger AUTO ichiraku_encontro |
 | 6530e3a | Feat: Bloco 3 completo — player grupo Player, KamuiTrigger fallback, akatsuki_hideout integrado |
+| 3a4295d | Docs: CLAUDE.md criado + CONTEXT.md atualizado sessão 4 |
+| 88179a5 | Feat: FadeTransition genérico + ichiraku_saida trigger e fluxo de saída |
 
 ## Commits anteriores (Bloco 3 + refinamentos)
 | SHA | Descrição |
@@ -128,17 +131,17 @@ Nunca commitar antes da confirmação do usuário.
 ---
 
 ## Pendências de integração (não-bloqueantes)
-- `ichiraku.tscn` — DialogueTrigger para `ichiraku_saida` (encontro ✅, saida pendente)
 - `assets/sprites/Naruto_chakra_charge.png` aguarda integração no Player (sem AnimatedSprite2D/Sprite2D ainda)
 - Renomear `floresta_da_nevoa.tscn` → `zona_5_lago.tscn` quando definir a Zona 5 final
 - Warning: signal `respawned` declarado em `player_controller.gd` mas nunca conectado (cleanup futura, não-bloqueante)
 - `exit_position` do KamuiTrigger (`Vector2(500, 0)`) é placeholder — revisar quando Zona 2 for construída
+- Refactor `kamui_trigger.gd` para usar `FadeTransition` (eliminar duplicação de fade)
+- Quando Zona 4 for construída, mover fala `Jiraiya: "Entra aí, garoto."` para trigger no corredor antes da entrada do Ichiraku
 
 ---
 
 ## Próximo bloco
 A definir. Opções na mesa:
-- **ichiraku_saida**: DialogueTrigger para o diálogo de saída do Ichiraku
 - **SaveSystem**: autoload pra persistir HP/chakra/pergaminhos cross-zona
 - **CollectibleSystem**: pergaminhos coletáveis (#02 Espadas, #03 Ramen, #04 Cobra, #05 Akatsuki, #06 Jiraiya — ver SUGESTOES.md)
 - **Chakra charge sprite**: integrar Naruto_chakra_charge.png ao Player (precisa AnimatedSprite2D ou TextureRect)
