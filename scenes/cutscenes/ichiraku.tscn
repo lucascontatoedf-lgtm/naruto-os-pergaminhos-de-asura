@@ -1,28 +1,10 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene format=3 uid="uid://bu5e3xo6w3v5o"]
 
-; ============================================================================
-; Ichiraku — cutscene do Ramen (Zona 4, easter egg SUGESTOES.md #03)
-;
-; ESTRUTURA:
-;   Ichiraku (Node2D) — script: ichiraku.gd
-;   ├── UILayer (CanvasLayer)
-;   │   └── Background (TextureRect, anchor full_rect, KEEP_ASPECT_COVERED)
-;   └── AnimationPlayer — loop_teuchi (8s, alternância de 3 PNGs)
-;
-; OBS: spec original pedia TextureRect direto em Node2D, mas TextureRect (Control)
-; em Node2D usa coords de mundo. UILayer (CanvasLayer) é necessário pro background
-; renderizar full-screen independente de camera/player. Adição mínima justificada.
-;
-; ANIMAÇÃO:
-;   t=0: teuchi1, t=2: teuchi2, t=4: teuchi3, t=6: teuchi2, t=8: teuchi1
-;   loop_mode = LOOP_LINEAR, INTERP_NEAREST + UPDATE_DISCRETE (swap discreto)
-; ============================================================================
-
-[ext_resource type="Script" path="res://scripts/cutscenes/ichiraku.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://assets/backgrounds/ichiraku/teuchi_naruto_jiraya1.png" id="2_teuchi1"]
-[ext_resource type="Texture2D" path="res://assets/backgrounds/ichiraku/teuchi_naruto_jiraya2.png" id="3_teuchi2"]
-[ext_resource type="Texture2D" path="res://assets/backgrounds/ichiraku/teuchi_naruto_jiraya3.png" id="4_teuchi3"]
-[ext_resource type="Script" path="res://scripts/components/dialogue_trigger.gd" id="5_trigger"]
+[ext_resource type="Script" uid="uid://3rpt0i1pi3l1" path="res://scripts/cutscenes/ichiraku.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://bphy7go2kexov" path="res://assets/backgrounds/ichiraku/teuchi_naruto_jiraya1.png" id="2_teuchi1"]
+[ext_resource type="Texture2D" uid="uid://da6enkqwcwlba" path="res://assets/backgrounds/ichiraku/teuchi_naruto_jiraya2.png" id="3_teuchi2"]
+[ext_resource type="Texture2D" uid="uid://gpb58lx4ggco" path="res://assets/backgrounds/ichiraku/teuchi_naruto_jiraya3.png" id="4_teuchi3"]
+[ext_resource type="Script" uid="uid://qqvopunsstbm" path="res://scripts/components/dialogue_trigger.gd" id="5_trigger"]
 
 [sub_resource type="Animation" id="anim_loop_teuchi"]
 resource_name = "loop_teuchi"
@@ -43,37 +25,49 @@ tracks/0/keys = {
 
 [sub_resource type="AnimationLibrary" id="anim_lib"]
 _data = {
-"loop_teuchi": SubResource("anim_loop_teuchi")
+&"loop_teuchi": SubResource("anim_loop_teuchi")
 }
 
 [sub_resource type="RectangleShape2D" id="trigger_shape"]
 size = Vector2(1152, 648)
 
-[node name="Ichiraku" type="Node2D"]
+[sub_resource type="RectangleShape2D" id="trigger_shape_saida"]
+size = Vector2(80, 648)
+
+[node name="Ichiraku" type="Node2D" unique_id=1303593420]
 script = ExtResource("1_script")
 
-[node name="UILayer" type="CanvasLayer" parent="."]
+[node name="UILayer" type="CanvasLayer" parent="." unique_id=936300545]
 
-[node name="Background" type="TextureRect" parent="UILayer"]
+[node name="Background" type="TextureRect" parent="UILayer" unique_id=1606422895]
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+mouse_filter = 2
 texture = ExtResource("2_teuchi1")
 expand_mode = 1
 stretch_mode = 6
-mouse_filter = 2
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
-libraries = {
-"": SubResource("anim_lib")
-}
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1216387488]
+libraries/ = SubResource("anim_lib")
 
-[node name="DialogueTrigger" type="Area2D" parent="."]
+[node name="DialogueTrigger" type="Area2D" parent="." unique_id=103911524]
+collision_layer = 0
+collision_mask = 128
+script = ExtResource("5_trigger")
+dialogue_id = "ichiraku_encontro"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DialogueTrigger" unique_id=1005691782]
+shape = SubResource("trigger_shape")
+
+[node name="DialogueTriggerSaida" type="Area2D" parent="."]
+position = Vector2(536, 0)
 collision_layer = 0
 collision_mask = 128
 script = ExtResource("5_trigger")
 mode = "AUTO"
-dialogue_id = "ichiraku_encontro"
+dialogue_id = "ichiraku_saida"
 one_shot = true
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="DialogueTrigger"]
-shape = SubResource("trigger_shape")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DialogueTriggerSaida"]
+shape = SubResource("trigger_shape_saida")
