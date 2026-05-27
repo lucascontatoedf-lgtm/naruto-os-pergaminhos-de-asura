@@ -2,7 +2,7 @@
 
 | # | Sugestão | Zona | Tipo |
 |---|---|---|---|
-| 01 | Animação de Chakra Charge | — | Polish |
+| 01 | Animação de Chakra Charge ✅ | — | Polish |
 | 02 | Espadas dos 6 Espadachins da Névoa | Zona 5 | Easter egg |
 | 03 | Ichiraku Ramen — mini fase | Zona 4 | Easter egg |
 | 04 | Cobra branca do Orochimaru | Zona 2 | Easter egg |

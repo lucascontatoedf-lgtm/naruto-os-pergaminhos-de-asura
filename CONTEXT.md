@@ -109,13 +109,23 @@ Nunca commitar antes da confirmação do usuário.
 
 ---
 
-## Commits desta sessão (Sessão 5)
+## Commits desta sessão (Sessão 6)
+- `Feat: ChakraSprite — Naruto sentado durante CHAKRA_CHARGE (#01)`
+- `Fix: Ichiraku background — sizing e posicionamento`
+
+### Sistemas atualizados
+- `ChakraSprite` — `Sprite2D` adicionado ao Player. Visível só durante `CHAKRA_CHARGE`, `scale = Vector2(0.4, 0.4)`, `position = Vector2(0, -52.8)`, `region_rect = Rect2(207, 17, 206, 264)`. `Visual` (Polygon2D) escondido durante o estado. ✅
+- `ichiraku.gd` — background sized via script: `size = Vector2(1900, 900)`, `position = Vector2(-24, -80)`. `ColorRect` preto adicionado ao `UILayer` como fundo. ✅
+- `assets/backgrounds/ichiraku/` — NUKENIN corrigido para NUKENIN pelo usuário diretamente no PNG. ✅
+
+## Commits da sessão 5
 | SHA | Descrição |
 |---|---|
-| 933aea0 | Feat: ichiraku.tscn — DialogueTrigger AUTO ichiraku_encontro |
-| 6530e3a | Feat: Bloco 3 completo — player grupo Player, KamuiTrigger fallback, akatsuki_hideout integrado |
-| 3a4295d | Docs: CLAUDE.md criado + CONTEXT.md atualizado sessão 4 |
+| 65c4d44 | Docs: reformula papéis — CLAUDE.md + CLAUDE_CODE.md |
+| 093af3b | Docs: atualiza CONTEXT.md sessão 5 |
 | 88179a5 | Feat: FadeTransition genérico + ichiraku_saida trigger e fluxo de saída |
+| 6530e3a | Feat: Bloco 3 completo — player grupo Player, KamuiTrigger fallback, akatsuki_hideout integrado |
+| 933aea0 | Feat: ichiraku.tscn — DialogueTrigger AUTO ichiraku_encontro |
 
 ## Commits anteriores (Bloco 3 + refinamentos)
 | SHA | Descrição |
