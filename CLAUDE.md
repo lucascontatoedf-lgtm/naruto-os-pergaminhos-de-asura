@@ -15,12 +15,15 @@ Leia este arquivo no início de toda sessão. Estas regras não mudam.
 6. **Zero commits sem teste confirmado pelo usuário no editor. Sem exceções.**
 
 ## Regras de implementação
-- Sempre analisar antes de implementar — nunca implementar por conta própria
+- Analisar antes de implementar — retornar só o que foi pedido, sem contexto extra
 - Mostrar apenas o diff — nunca o arquivo inteiro
+- Não fazer perguntas desnecessárias — se a análise revelar ambiguidade, listar só as decisões bloqueantes
 - Mudança mínima necessária — sem refatoração fora do escopo
 - Sem overengineering
 - Nunca inventar comportamento, arquivos ou código
-- Diferenciar fatos de suposições explicitamente
+- Diferenciar fatos de suposições em uma linha, não em parágrafos
+- Nunca fazer git, commit ou push — isso é papel do Claude Code
+
 
 ## Regras de commit
 - Nunca commitar sem go explícito do Tech Lead
