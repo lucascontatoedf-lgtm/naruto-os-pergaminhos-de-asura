@@ -26,7 +26,6 @@
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="PackedScene" path="res://scenes/entities/zabuza.tscn" id="2_zabuza"]
-[ext_resource type="Script" path="res://scripts/ui/debug_hud.gd" id="3_hud_script"]
 
 [sub_resource type="RectangleShape2D" id="floor_left_shape"]
 size = Vector2(1600, 64)
@@ -200,47 +199,3 @@ position = Vector2(-1400, 200)
 
 [node name="Zabuza" parent="." instance=ExtResource("2_zabuza")]
 position = Vector2(1200, 368)
-
-; ----------------------------------------------------------------------------
-; DEBUG HUD — mesmo layout do test_stage pra consistência de telemetria
-; ----------------------------------------------------------------------------
-[node name="DebugHUD" type="CanvasLayer" parent="."]
-script = ExtResource("3_hud_script")
-
-[node name="Root" type="Control" parent="DebugHUD"]
-offset_left = 12.0
-offset_top = 12.0
-offset_right = 320.0
-offset_bottom = 122.0
-mouse_filter = 2
-
-[node name="Background" type="ColorRect" parent="DebugHUD/Root"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-color = Color(0.04, 0.04, 0.08, 0.72)
-mouse_filter = 2
-
-[node name="VBox" type="VBoxContainer" parent="DebugHUD/Root"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 14.0
-offset_top = 10.0
-offset_right = -14.0
-offset_bottom = -10.0
-theme_override_constants/separation = 6
-mouse_filter = 2
-
-[node name="StateLabel" type="Label" parent="DebugHUD/Root/VBox"]
-text = "Estado: --"
-theme_override_font_sizes/font_size = 20
-theme_override_colors/font_color = Color(1, 0.95, 0.7, 1)
-
-[node name="HealthLabel" type="Label" parent="DebugHUD/Root/VBox"]
-text = "Vida: --"
-theme_override_font_sizes/font_size = 20
-theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
-
-[node name="ChakraLabel" type="Label" parent="DebugHUD/Root/VBox"]
-text = "Chakra: --"
-theme_override_font_sizes/font_size = 20
-theme_override_colors/font_color = Color(0.55, 0.85, 1, 1)

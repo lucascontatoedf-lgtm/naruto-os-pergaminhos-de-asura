@@ -38,6 +38,8 @@ func load_into(player) -> void:
 	player.current_chakra = _chakra
 	if "_collected_scrolls" in player:
 		player._collected_scrolls = _scrolls.duplicate()
+	player.health_changed.emit(_hp, player.max_health)
+	player.chakra_changed.emit(_chakra, player.max_chakra)
 
 func reset() -> void:
 	_hp = -1

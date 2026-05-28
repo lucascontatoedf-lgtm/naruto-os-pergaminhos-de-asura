@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 LevelManager="*res://scripts/systems/level_manager.gd"
 DialogueManager="*res://scripts/systems/dialogue_manager.gd"
 SaveSystem="*res://scripts/systems/save_system.gd"
+DebugHUD="*res://scenes/ui/debug_hud.tscn"
 
 [input]
 

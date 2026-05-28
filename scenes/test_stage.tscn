@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://cjkt2xgkywvg4"]
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
-[ext_resource type="Script" uid="uid://bbs848svnmaig" path="res://scripts/ui/debug_hud.gd" id="2_hud_script"]
 [ext_resource type="PackedScene" path="res://scenes/entities/dummy.tscn" id="3_dummy"]
 [ext_resource type="PackedScene" path="res://scenes/entities/melee_ninja.tscn" id="4_melee_ninja"]
 [ext_resource type="PackedScene" path="res://scenes/entities/zabuza.tscn" id="5_zabuza"]
@@ -81,54 +80,6 @@ position = Vector2(700, 368)
 
 [node name="Player" parent="." unique_id=160438161 instance=ExtResource("1_player")]
 position = Vector2(0, 200)
-
-[node name="DebugHUD" type="CanvasLayer" parent="." unique_id=942475291]
-script = ExtResource("2_hud_script")
-
-[node name="Root" type="Control" parent="DebugHUD" unique_id=1640004723]
-layout_mode = 3
-anchors_preset = 0
-offset_left = 12.0
-offset_top = 12.0
-offset_right = 320.0
-offset_bottom = 122.0
-mouse_filter = 2
-
-[node name="Background" type="ColorRect" parent="DebugHUD/Root" unique_id=527439308]
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-mouse_filter = 2
-color = Color(0.04, 0.04, 0.08, 0.72)
-
-[node name="VBox" type="VBoxContainer" parent="DebugHUD/Root" unique_id=246767810]
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 14.0
-offset_top = 10.0
-offset_right = -14.0
-offset_bottom = -10.0
-mouse_filter = 2
-theme_override_constants/separation = 6
-
-[node name="StateLabel" type="Label" parent="DebugHUD/Root/VBox" unique_id=380164954]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.95, 0.7, 1)
-theme_override_font_sizes/font_size = 20
-text = "Estado: --"
-
-[node name="HealthLabel" type="Label" parent="DebugHUD/Root/VBox" unique_id=1652865951]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
-theme_override_font_sizes/font_size = 20
-text = "Vida: --"
-
-[node name="ChakraLabel" type="Label" parent="DebugHUD/Root/VBox" unique_id=892992356]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.55, 0.85, 1, 1)
-theme_override_font_sizes/font_size = 20
-text = "Chakra: --"
 
 [node name="Ichiraku" parent="." unique_id=1303593420 instance=ExtResource("6_o24wk")]
 

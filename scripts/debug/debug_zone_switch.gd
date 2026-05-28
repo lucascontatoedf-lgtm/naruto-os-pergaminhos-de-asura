@@ -9,9 +9,9 @@ func _input(event: InputEvent) -> void:
 	if not player: return
 	match event.keycode:
 		KEY_F1:
-			# Salva estado atual e imprime no console
 			SaveSystem.save(player)
 			print("[DEBUG] save() — hp: %d | chakra: %.1f" % [SaveSystem._hp, SaveSystem._chakra])
+			LevelManager.change_scene("zona_2")
 		KEY_F2:
 			# Aplica estado salvo e imprime no console
 			SaveSystem.load_into(player)
