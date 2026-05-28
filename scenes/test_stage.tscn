@@ -5,7 +5,6 @@
 [ext_resource type="PackedScene" path="res://scenes/entities/melee_ninja.tscn" id="4_melee_ninja"]
 [ext_resource type="PackedScene" path="res://scenes/entities/zabuza.tscn" id="5_zabuza"]
 [ext_resource type="PackedScene" uid="uid://bu5e3xo6w3v5o" path="res://scenes/cutscenes/ichiraku.tscn" id="6_o24wk"]
-[ext_resource type="Script" path="res://scripts/debug/debug_zone_switch.gd" id="7_debug_zone_switch"]
 
 [sub_resource type="RectangleShape2D" id="floor_shape"]
 size = Vector2(2400, 64)
@@ -84,6 +83,3 @@ position = Vector2(0, 200)
 [node name="Ichiraku" parent="." unique_id=1303593420 instance=ExtResource("6_o24wk")]
 
 [node name="Ichiraku" parent="Ichiraku" unique_id=2118423840 instance=ExtResource("6_o24wk")]
-
-[node name="DebugZoneSwitch" type="Node" parent="."]
-script = ExtResource("7_debug_zone_switch")

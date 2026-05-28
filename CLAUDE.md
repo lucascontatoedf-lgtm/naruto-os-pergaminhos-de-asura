@@ -60,3 +60,11 @@ Leia este arquivo no início de toda sessão. Estas regras não mudam.
 - Prompts para coworker e Claude Code devem deixar explícito
   quem é o destinatário e o que exatamente deve ser feito.
 - Sem ambiguidade de escopo.
+
+### Limpeza de fim de sessão
+- Remover print() de debug dos scripts antes do commit final
+- Remover nós temporários de teste das cenas (ex: DebugZoneSwitch no test_stage)
+- Manter: debug_zone_switch.gd (útil enquanto zonas reais não existem)
+- Manter: DebugHUD (ferramenta ativa de desenvolvimento)
+- Manter: comentários no código
+- Nunca remover: arquivos .uid (gerados pelo Godot, necessários)
