@@ -38,3 +38,24 @@
 - Substitui Neji completamente
 - Jiraiya apresenta cada golpe no estilo mestre→aluno
 - Trigger automático (player entra na área, diálogo inicia sozinho)
+
+---
+
+### #07 — Tutorial interativo — Zona 2 (JiraiyaTrigger)
+
+| Campo | Valor |
+|---|---|
+| Zona | 2 |
+| Tipo | Gameplay / Tutorial |
+
+#### Problema atual
+- JiraiyaTrigger AUTO dispara o diálogo completo na entrada da Zona 2
+- Jogador avança tudo com J sem executar nenhum input
+- Iniciante não aprende nada
+
+#### Design fechado
+- Criar TutorialTrigger — sistema independente do DialogueSystem
+- Exibe uma instrução por vez ("Pressione D para mover direita")
+- Aguarda o input correto do jogador antes de avançar
+- Só então exibe a próxima instrução
+- Inputs mínimos a cobrir: movimento (D), pulo (W), Rasengan (O)

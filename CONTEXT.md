@@ -72,7 +72,8 @@ Nunca commitar antes da confirmação do usuário.
 | KamuiTrigger | kamui_trigger.gd | ✅ ativo em akatsuki_hideout, player via grupo, fallback get_nodes_in_group |
 | FadeTransition | fade_transition.gd | ✅ componente genérico, `fade(callback)` + signal `fade_completed`, duration=0.5s default |
 | CollectibleSystem | — | ❌ pendente |
-| SaveSystem | — | ❌ pendente |
+| SaveSystem | save_system.gd | ✅ autoload, snapshot em memória de hp/chakra/scrolls; `load_into()` emite signals |
+| DebugHUD | debug_hud.gd + debug_hud.tscn | ✅ autoload, reconecta ao Player via `node_added` + grupo "Player" |
 
 ---
 
@@ -109,14 +110,23 @@ Nunca commitar antes da confirmação do usuário.
 
 ---
 
-## Commits desta sessão (Sessão 6)
-- `Feat: ChakraSprite — Naruto sentado durante CHAKRA_CHARGE (#01)`
-- `Fix: Ichiraku background — sizing e posicionamento`
+## Commits desta sessão (Sessão 7)
+- `9ea1b21` — Feat: SaveSystem — persistência de hp/chakra/scrolls entre zonas
+- `1cdfa3b` — Docs: CLAUDE.md — lições aprendidas sessão 7
+- (este commit) — Docs: SUGESTOES.md #07 + CONTEXT.md sessão 7
 
-### Sistemas atualizados
-- `ChakraSprite` — `Sprite2D` adicionado ao Player. Visível só durante `CHAKRA_CHARGE`, `scale = Vector2(0.4, 0.4)`, `position = Vector2(0, -52.8)`, `region_rect = Rect2(207, 17, 206, 264)`. `Visual` (Polygon2D) escondido durante o estado. ✅
-- `ichiraku.gd` — background sized via script: `size = Vector2(1900, 900)`, `position = Vector2(-24, -80)`. `ColorRect` preto adicionado ao `UILayer` como fundo. ✅
-- `assets/backgrounds/ichiraku/` — NUKENIN corrigido para NUKENIN pelo usuário diretamente no PNG. ✅
+### Sistemas entregues
+- `SaveSystem` — autoload novo registrado em `project.godot` (`SaveSystem="*res://scripts/systems/save_system.gd"`). Snapshot em memória de `_hp`, `_chakra`, `_scrolls`. API: `save(player)`, `load_into(player)`, `reset()`, `has_data()`. `load_into()` emite `health_changed` e `chakra_changed` no Player após restore — sincroniza HUD sem esperar próxima emissão natural. ✅
+- `DebugHUD` — refatorado para autoload (`DebugHUD="*res://scenes/ui/debug_hud.tscn"`). `@export var player_path` removido; agora resolve o Player via `get_tree().get_first_node_in_group("Player")` e reconecta automaticamente em troca de zona via `get_tree().node_added`. Disconnect-before-reconnect evita signals duplicados. Instâncias locais de DebugHUD removidas de `test_stage.tscn` e `floresta_da_nevoa.tscn`. ✅
+- `zona_2_casa_central.tscn` — `ZoneLabel` corrigido: tipo `Label2D` (classe inexistente no Godot 4.6) → `Label`; propriedade `font_size = 28` → `theme_override_font_sizes/font_size = 28`. Corrige crash com `ERROR: Cannot get class 'Label2D'` em respawn/change_scene. ✅
+- `debug_zone_switch.gd` — novo autoload de debug em `scripts/debug/`. F1 = `SaveSystem.save(player)` + `LevelManager.change_scene("zona_2")`; F2 = `SaveSystem.load_into(player)`; F3 = `SaveSystem.reset()`. Usado para validar persistência cross-zona. ✅
+- `CLAUDE.md` — adicionada seção "Lições aprendidas — Sessão 7": direcionamento de tarefas (coworker vs Claude Code), alucinação/verificação contra disco, specs sem valores numéricos duplicados, prompts sem ambiguidade de escopo. ✅
+- `SUGESTOES.md` — `#07 Tutorial interativo — Zona 2 (JiraiyaTrigger)` adicionado: sistema independente do DialogueSystem que aguarda input correto antes de avançar instrução. ✅
+
+## Commits da sessão 6
+- `Feat: ChakraSprite — Naruto sentado durante CHAKRA_CHARGE (#01)` (cb037d2)
+- `Fix: Ichiraku background — sizing e posicionamento` (cb037d2)
+- `Docs: atualiza CONTEXT.md sessão 6` (a355897)
 
 ## Commits da sessão 5
 | SHA | Descrição |
@@ -152,7 +162,7 @@ Nunca commitar antes da confirmação do usuário.
 
 ## Próximo bloco
 A definir. Opções na mesa:
-- **SaveSystem**: autoload pra persistir HP/chakra/pergaminhos cross-zona
+- **TutorialTrigger Zona 2** (#07 — ver SUGESTOES.md): substituir JiraiyaTrigger AUTO por sistema que aguarda input correto antes de avançar instrução
 - **CollectibleSystem**: pergaminhos coletáveis (#02 Espadas, #03 Ramen, #04 Cobra, #05 Akatsuki, #06 Jiraiya — ver SUGESTOES.md)
 - **Chakra charge sprite**: integrar Naruto_chakra_charge.png ao Player (precisa AnimatedSprite2D ou TextureRect)
 - **Zona 5**: renomear/finalizar floresta_da_nevoa.tscn
