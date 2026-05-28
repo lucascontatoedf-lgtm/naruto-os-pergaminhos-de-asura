@@ -36,3 +36,27 @@ Leia este arquivo no início de toda sessão. Estas regras não mudam.
 - Atualizar `CONTEXT.md` com commits, decisões e pendências da sessão
 - Commit final: `Docs: atualiza CONTEXT.md sessão N`
 - Push e aguardar
+
+---
+
+## Lições aprendidas — Sessão 7
+
+### Direcionamento de tarefas
+- Coworker: leitura, análise, diffs para revisão. NUNCA edita arquivo em disco.
+- Claude Code: edição real de arquivos, commits, push.
+
+### Alucinação e verificação
+- Antes de apontar bug ou problema, verificar se o arquivo em disco
+  já está correto. Não assumir estado com base em mensagem anterior.
+- Nunca emitir instrução de teste sem validar contra o estado atual
+  do projeto (ex: não pedir teste via morte se a zona de respawn
+  não tem HUD).
+
+### Specs e referências
+- Specs nunca devem conter valores numéricos próprios quando a
+  instrução é "copie do original" — escolhe um ou outro, nunca os dois.
+
+### Prompts
+- Prompts para coworker e Claude Code devem deixar explícito
+  quem é o destinatário e o que exatamente deve ser feito.
+- Sem ambiguidade de escopo.
