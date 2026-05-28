@@ -49,6 +49,9 @@ func change_scene(zone_name: String) -> void:
 		push_error("LevelManager.change_scene: zona '%s' não registrada em ZONE_PATHS. Adicione a entrada antes de chamar." % zone_name)
 		return
 	current_zone = zone_name
+	var player = get_tree().get_first_node_in_group("Player")
+	if player:
+		SaveSystem.save(player)
 	get_tree().change_scene_to_file(ZONE_PATHS[zone_name])
 
 ## Reinicia na zona de respawn padrão (RESPAWN_ZONE). Chamado por

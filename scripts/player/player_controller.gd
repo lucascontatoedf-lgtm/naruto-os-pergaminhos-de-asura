@@ -167,6 +167,7 @@ func _ready() -> void:
 	} # "heavy" não entra: vira projétil via _throw_shuriken()
 	hurtbox.hit_taken.connect(_on_hit_taken)
 	_enter_state(State.IDLE)
+	SaveSystem.load_into(self)
 
 func _physics_process(delta: float) -> void:
 	_tick_timers(delta)
